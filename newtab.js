@@ -957,6 +957,7 @@ function renderSessionStrip() {
   if (st.dismissedAt) { el.classList.add('hidden'); el.innerHTML = ''; return; }
   const suggestions = getNextActionSuggestions();
   const first = suggestions[0];
+  const second = suggestions[1];
   if (!first) {
     el.classList.remove('hidden');
     el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Today / Continue / Clean up / Focus</div><div class="strip-title">All clear for now.</div><div class="strip-sub">Add a next action, Future Me note, or inbox tab to get guidance.</div></div>
@@ -966,9 +967,9 @@ function renderSessionStrip() {
     el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Start here</div><div class="strip-title">${esc(first.title)}</div></div>
     <div class="strip-actions"><button data-sact="expand">Expand</button><button data-sact="dismiss">Dismiss</button></div>`;
   } else {
-    const startPomo = !!first.onAction;
+    const secondLine = second ? `<div class="strip-sub strip-secondary">Next: ${esc(second.title)}</div>` : '';
     el.classList.remove('hidden');
-    el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Today / Continue / Clean up / Focus</div><div class="strip-title">${esc(first.title)}</div><div class="strip-sub">${esc(first.reason)}</div></div>
+    el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Today / Continue / Clean up / Focus</div><div class="strip-title">Continue: ${esc(first.title)}</div><div class="strip-sub">${esc(first.reason)}</div>${secondLine}</div>
     <div class="strip-actions">
       <button data-sact="resume">${esc(first.actionLabel || 'Resume')}</button>
       <button data-sact="pomo">Start 25m</button>
