@@ -944,6 +944,51 @@ function openWhatNowPanel() {
   document.getElementById('what-now-overlay').classList.remove('hidden');
 }
 function closeWhatNowPanel() { document.getElementById('what-now-overlay').classList.add('hidden'); }
+function getSessionStripState() {
+  const s = State.get();
+  if (!s.ui) s.ui = {};
+  if (!s.ui.sessionStrip) s.ui.sessionStrip = { collapsed: false, dismissedAt: 0 };
+  return s.ui.sessionStrip;
+}
+function renderSessionStrip() {
+  const el = document.getElementById('session-strip');
+  if (!el) return;
+  const st = getSessionStripState();
+  if (st.dismissedAt) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  const suggestions = getNextActionSuggestions();
+  const first = suggestions[0];
+  if (!first) {
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Today / Continue / Clean up / Focus</div><div class="strip-title">All clear for now.</div><div class="strip-sub">Add a next action, Future Me note, or inbox tab to get guidance.</div></div>
+    <div class="strip-actions"><button data-sact="collapse">${st.collapsed ? 'Expand' : 'Collapse'}</button><button data-sact="dismiss">Dismiss</button></div>`;
+  } else if (st.collapsed) {
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Start here</div><div class="strip-title">${esc(first.title)}</div></div>
+    <div class="strip-actions"><button data-sact="expand">Expand</button><button data-sact="dismiss">Dismiss</button></div>`;
+  } else {
+    const startPomo = !!first.onAction;
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="strip-copy"><div class="strip-kicker">Today / Continue / Clean up / Focus</div><div class="strip-title">${esc(first.title)}</div><div class="strip-sub">${esc(first.reason)}</div></div>
+    <div class="strip-actions">
+      <button data-sact="resume">${esc(first.actionLabel || 'Resume')}</button>
+      <button data-sact="pomo">Start 25m</button>
+      <button data-sact="triage">Triage Inbox</button>
+      <button data-sact="collapse">Collapse</button>
+      <button data-sact="dismiss">Dismiss</button>
+    </div>`;
+  }
+  el.querySelectorAll('[data-sact]').forEach(btn => {
+    btn.onclick = () => {
+      const act = btn.dataset.sact;
+      if (act === 'dismiss') { State.snapshot('Dismiss strip'); st.dismissedAt = Date.now(); State.persist(); renderSessionStrip(); }
+      else if (act === 'collapse') { st.collapsed = true; State.persist(); renderSessionStrip(); }
+      else if (act === 'expand') { st.collapsed = false; State.persist(); renderSessionStrip(); }
+      else if (act === 'resume') { if (first?.onAction) first.onAction(); }
+      else if (act === 'pomo') { openPomo(); renderPomo(); }
+      else if (act === 'triage') { openTriage(); }
+    };
+  });
+}
 
 let triageQueue = [];
 let triageIndex = 0;
@@ -1432,7 +1477,7 @@ async function saveAllTabs() {
 // ════════════════════════════════════════════════════════════════
 // RENDER (diff-based for items)
 // ════════════════════════════════════════════════════════════════
-function renderAll() { renderHeader(); renderWsList(); renderCategoryTabs(); renderBoard(); }
+function renderAll() { renderHeader(); renderWsList(); renderCategoryTabs(); renderSessionStrip(); renderBoard(); }
 
 async function renderHeader() {
   const ws = activeWs(); if (!ws) return;

@@ -535,6 +535,34 @@ body[data-anim="off"] * { transition: none !important; animation: none !importan
   padding: 1px 5px; color: var(--text3);
 }
 
+#session-strip {
+  margin: 12px 18px 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg2);
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
+}
+#session-strip.hidden { display: none; }
+.strip-copy { min-width: 0; }
+.strip-kicker { font: 600 11px/1.2 var(--font); color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.strip-title { font: 600 13px/1.3 var(--font); color: var(--text); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip-sub { font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.strip-actions button {
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text2);
+  border-radius: 8px;
+  padding: 5px 9px;
+  font: 600 11.5px var(--font);
+  cursor: pointer;
+}
+.strip-actions button:hover { border-color: var(--accent); color: var(--text); }
+
 /* ═══ BOARD ═══ */
 #board {
   flex: 1; display: flex; gap: 14px;
