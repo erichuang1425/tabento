@@ -3792,21 +3792,47 @@ function renderFloatingWidgets() {
     layer.id = 'floating-layer';
     document.body.appendChild(layer);
   }
-  layer.innerHTML = '';
-  const f = getFloating();
-  f.forEach(w => layer.appendChild(buildFloatingWidget(w)));
+  const wanted = new Map(getFloating().map(w => [w.tool, w]));
+  // Tear down widgets that are no longer in state. Leaving the rest alone
+  // (instead of rebuilding everything) avoids the entrance animation
+  // flickering on every open/close, and prevents global drag listeners
+  // from being re-registered on widgets that didn't change.
+  layer.querySelectorAll('.fw-window').forEach(el => {
+    const tool = el.dataset.tool;
+    if (!wanted.has(tool)) {
+      if (el._abort) try { el._abort.abort(); } catch {}
+      const body = el.querySelector('.fw-body');
+      if (body && body._pomoUpdater) { clearInterval(body._pomoUpdater); body._pomoUpdater = null; }
+      el.remove();
+    } else {
+      // Sync existing widget's position from state in case it changed.
+      const w = wanted.get(tool);
+      if (el.style.left !== w.x + 'px') el.style.left = w.x + 'px';
+      if (el.style.top !== w.y + 'px') el.style.top = w.y + 'px';
+      wanted.delete(tool);
+    }
+  });
+  // Mount only newly added widgets — these animate in fresh.
+  wanted.forEach(w => layer.appendChild(buildFloatingWidget(w)));
 }
 
 function buildFloatingWidget(w) {
   const meta = FLOATING_TOOLS[w.tool] || { title: w.tool, icon: '⚡' };
   const el = document.createElement('div');
   el.className = 'fw-window' + (w.minimized ? ' minimized' : '');
+  el.dataset.tool = w.tool;
   el.style.left = w.x + 'px';
   el.style.top = w.y + 'px';
   if (!w.minimized) {
     el.style.width = w.w + 'px';
     el.style.height = w.h + 'px';
   }
+
+  // Per-widget AbortController so global drag/resize listeners get cleaned
+  // up when the widget is torn down (prevents listener-leak induced lag).
+  const ac = new AbortController();
+  el._abort = ac;
+  const sig = ac.signal;
 
   el.innerHTML = `
     <div class="fw-titlebar">
@@ -3840,7 +3866,7 @@ function buildFloatingWidget(w) {
       else if (a === 'min') {
         w.minimized = !w.minimized;
         State.persist();
-        renderFloatingWidgets();
+        toggleFloatingMinimize(el, w);
       } else if (a === 'open') {
         // Open the full tool overlay AND remove from floating
         closeFloating(w.tool);
@@ -3856,7 +3882,8 @@ function buildFloatingWidget(w) {
     };
   });
 
-  // Drag the title bar
+  // Drag the title bar — rAF throttled to keep at 60fps and avoid jank
+  // even when several widgets are open.
   const tb = el.querySelector('.fw-titlebar');
   let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
   tb.addEventListener('mousedown', (e) => {
@@ -3867,22 +3894,22 @@ function buildFloatingWidget(w) {
     el.classList.add('fw-dragging');
     el.style.zIndex = 9999;
     e.preventDefault();
-  });
-  const onMove = (e) => {
+  }, { signal: sig });
+  const onMove = rafThrottle((e) => {
     if (!dragging) return;
     w.x = Math.max(0, Math.min(window.innerWidth - 60, startLeft + (e.clientX - startX)));
     w.y = Math.max(0, Math.min(window.innerHeight - 30, startTop + (e.clientY - startY)));
     el.style.left = w.x + 'px';
     el.style.top = w.y + 'px';
-  };
+  });
   const onUp = () => {
     if (!dragging) return;
     dragging = false;
     el.classList.remove('fw-dragging');
     State.persist();
   };
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('mouseup', onUp);
+  document.addEventListener('mousemove', onMove, { signal: sig });
+  document.addEventListener('mouseup', onUp, { signal: sig });
 
   // Resize
   const resizer = el.querySelector('.fw-resize');
@@ -3894,31 +3921,53 @@ function buildFloatingWidget(w) {
       rsw = w.w; rsh = w.h;
       e.stopPropagation();
       e.preventDefault();
-    });
-    const onResMove = (e) => {
+    }, { signal: sig });
+    const onResMove = rafThrottle((e) => {
       if (!resizing) return;
       w.w = Math.max(220, rsw + (e.clientX - rsx));
       w.h = Math.max(120, rsh + (e.clientY - rsy));
       el.style.width = w.w + 'px';
       el.style.height = w.h + 'px';
-    };
+    });
     const onResUp = () => {
       if (!resizing) return;
       resizing = false;
       State.persist();
       renderFloatingBody(w.tool, body);
     };
-    document.addEventListener('mousemove', onResMove);
-    document.addEventListener('mouseup', onResUp);
+    document.addEventListener('mousemove', onResMove, { signal: sig });
+    document.addEventListener('mouseup', onResUp, { signal: sig });
   }
 
   // Bring to front on click
   el.addEventListener('mousedown', () => {
     el.style.zIndex = 9999;
     document.querySelectorAll('.fw-window').forEach(o => { if (o !== el) o.style.zIndex = 9990; });
-  });
+  }, { signal: sig });
 
   return el;
+}
+
+// In-place minimize/restore avoids the full rebuild that re-runs the
+// fwIn entrance animation across every widget (which is what made
+// the popouts flicker on toggle).
+function toggleFloatingMinimize(el, w) {
+  if (w.minimized) {
+    el.classList.add('minimized');
+    el.style.width = '';
+    el.style.height = '';
+  } else {
+    el.classList.remove('minimized');
+    el.style.width = w.w + 'px';
+    el.style.height = w.h + 'px';
+    const body = el.querySelector('.fw-body');
+    if (body) renderFloatingBody(w.tool, body);
+  }
+  const minBtn = el.querySelector('.fw-btn[data-act="min"]');
+  if (minBtn) {
+    minBtn.title = w.minimized ? 'Restore' : 'Minimize';
+    minBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10"><path d="${w.minimized ? 'M2 4h6v2H2z' : 'M2 7h6'}" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>`;
+  }
 }
 
 function renderFloatingBody(tool, container) {
