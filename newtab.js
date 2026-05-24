@@ -186,6 +186,8 @@ async function init() {
     applySettings();
     bindSchemaMismatchOverlay();
     showSchemaMismatch(loadedSchema);
+    document.body.classList.remove('app-loading');
+    document.body.classList.add('app-ready');
     return;
   }
 
@@ -202,32 +204,42 @@ function initAfterLoad() {
   bindStatic();
 
   renderAll();
-  refreshStorageUsage();
 
-  refreshOpenTabs();
-  chrome.tabs.onCreated.addListener(refreshOpenTabs);
-  chrome.tabs.onRemoved.addListener(refreshOpenTabs);
-  chrome.tabs.onUpdated.addListener(debounce(refreshOpenTabs, 250));
-  chrome.tabs.onActivated.addListener(refreshOpenTabs);
-  try {
-    chrome.windows.onCreated.addListener(() => { refreshOpenTabs(); renderHeader(); });
-    chrome.windows.onRemoved.addListener(() => { refreshOpenTabs(); renderHeader(); });
-    chrome.windows.onFocusChanged.addListener(async (wid) => {
-      if (wid === chrome.windows.WINDOW_ID_NONE) return;
-      if (State.get().settings.autoSwitchWorkspace) {
-        const match = State.get().workspaces.find(ws => ws.windowId === wid);
-        if (match && match.id !== State.get().activeWsId) {
-          State.get().activeWsId = match.id;
-          State.persist();
-          renderAll();
+  // Reveal the app once the first frame paints (avoids any layout flash).
+  requestAnimationFrame(() => {
+    document.body.classList.remove('app-loading');
+    document.body.classList.add('app-ready');
+  });
+
+  // Defer non-critical init to idle time so first paint isn't blocked.
+  const idle = window.requestIdleCallback || (fn => setTimeout(fn, 0));
+  idle(() => {
+    refreshStorageUsage();
+    refreshOpenTabs();
+    chrome.tabs.onCreated.addListener(refreshOpenTabs);
+    chrome.tabs.onRemoved.addListener(refreshOpenTabs);
+    chrome.tabs.onUpdated.addListener(debounce(refreshOpenTabs, 250));
+    chrome.tabs.onActivated.addListener(refreshOpenTabs);
+    try {
+      chrome.windows.onCreated.addListener(() => { refreshOpenTabs(); renderHeader(); });
+      chrome.windows.onRemoved.addListener(() => { refreshOpenTabs(); renderHeader(); });
+      chrome.windows.onFocusChanged.addListener(async (wid) => {
+        if (wid === chrome.windows.WINDOW_ID_NONE) return;
+        if (State.get().settings.autoSwitchWorkspace) {
+          const match = State.get().workspaces.find(ws => ws.windowId === wid);
+          if (match && match.id !== State.get().activeWsId) {
+            State.get().activeWsId = match.id;
+            State.persist();
+            renderAll();
+          }
         }
-      }
-      refreshOpenTabs();
-    });
-  } catch {}
+        refreshOpenTabs();
+      });
+    } catch {}
 
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (State.get().settings.theme === 'auto') applySettings();
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (State.get().settings.theme === 'auto') applySettings();
+    });
   });
 }
 
@@ -571,6 +583,15 @@ function applySettings() {
   document.body.dataset.anim = s.animate ? 'on' : 'off';
   document.body.classList.toggle('blur-privacy', !!s.blurPrivacy);
 
+  // Mirror for the inline pre-init script in newtab.html — read on next launch
+  // before paint to eliminate theme flash.
+  try {
+    localStorage.setItem('te_settings_mirror', JSON.stringify({
+      theme: s.theme, size: s.size, font: s.font,
+      width: s.width || 'normal', anim: s.animate ? 'on' : 'off'
+    }));
+  } catch {}
+
   const sb = document.getElementById('sidebar');
   if (sb) sb.classList.toggle('collapsed', !!s.sidebarCollapsed);
 
@@ -611,6 +632,20 @@ function trapTabKey(e, container) {
   const active = document.activeElement;
   if (e.shiftKey && (active === first || !container.contains(active))) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && (active === last || !container.contains(active))) { e.preventDefault(); first.focus(); }
+}
+
+// Ref-counted body-scroll lock. Nested overlays open/close independently
+// without stepping on each other.
+let _scrollLockCount = 0;
+function lockBodyScroll() {
+  if (_scrollLockCount++ === 0) document.body.style.overflow = 'hidden';
+}
+function unlockBodyScroll() {
+  if (_scrollLockCount > 0 && --_scrollLockCount === 0) document.body.style.overflow = '';
+}
+function resetBodyScrollLock() {
+  _scrollLockCount = 0;
+  document.body.style.overflow = '';
 }
 function enableKeyboardClick(el) {
   if (!el || el.dataset.kbReady === '1') return;
@@ -787,9 +822,28 @@ async function clearReminder(itemId) {
 // EMOJI PICKER
 // ════════════════════════════════════════════════════════════════
 let emojiPickerCtx = null;
+let _emojiDataPromise = null;
+let _emojiPickerBuilt = false;
+// emoji-data.js is ~17KB and only needed when the picker opens. Defer to
+// keep first-paint fast.
+function loadEmojiData() {
+  if (typeof EMOJI_DATA !== 'undefined') return Promise.resolve();
+  if (_emojiDataPromise) return _emojiDataPromise;
+  _emojiDataPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'emoji-data.js';
+    s.onload = () => resolve();
+    s.onerror = () => { _emojiDataPromise = null; reject(new Error('emoji-data load failed')); };
+    document.head.appendChild(s);
+  });
+  return _emojiDataPromise;
+}
 function buildEmojiPicker() {
+  if (typeof EMOJI_DATA === 'undefined') return; // deferred; will be built on first open
+  if (_emojiPickerBuilt) return;
   const tabs = document.getElementById('ep-tabs');
   if (!tabs) return;
+  _emojiPickerBuilt = true;
   tabs.innerHTML = '';
   EMOJI_DATA.categories.forEach((cat, i) => {
     const b = document.createElement('button');
@@ -835,12 +889,19 @@ function openEmojiPicker(target, anchor) {
   if (top + 340 > window.innerHeight) top = r.top - 346;
   ep.style.left = left + 'px'; ep.style.top = top + 'px';
   document.getElementById('ep-search-input').value = '';
-  renderEmojiGrid('smileys');
+  const grid = document.getElementById('ep-grid');
+  // Show placeholder while emoji-data.js loads (first open only).
+  if (typeof EMOJI_DATA === 'undefined') {
+    if (grid) grid.innerHTML = `<div class="ep-empty">Loading…</div>`;
+  }
+  loadEmojiData()
+    .then(() => { buildEmojiPicker(); renderEmojiGrid('smileys'); })
+    .catch(() => { if (grid) grid.innerHTML = `<div class="ep-empty">Failed to load emojis</div>`; });
   setTimeout(() => {
     const close = e => { if (!ep.contains(e.target)) { ep.classList.add('hidden'); document.removeEventListener('click', close); emojiPickerCtx = null; } };
     document.addEventListener('click', close);
   }, 50);
-  setTimeout(() => document.getElementById('ep-search-input').focus(), 80);
+  setTimeout(() => document.getElementById('ep-search-input')?.focus(), 80);
 }
 function selectEmoji(e) {
   if (!emojiPickerCtx) return;
@@ -1579,10 +1640,14 @@ function renderWsList() {
   });
 }
 
+let _catTabsInitialized = false;
 function renderCategoryTabs() {
   const ws = activeWs(); if (!ws) return;
   const $c = document.getElementById('cat-tabs');
+  // Preserve keyboard focus across re-renders (otherwise arrow-key nav resets focus to body).
+  const refocusActive = $c.contains(document.activeElement) && document.activeElement.classList?.contains('cat-tab');
   $c.innerHTML = '';
+  const frag = document.createDocumentFragment();
   ws.categories.forEach(cat => {
     const b = document.createElement('button');
     b.className = 'cat-tab' + (cat.id === ws.activeCatId ? ' active' : '');
@@ -1632,8 +1697,62 @@ function renderCategoryTabs() {
         State.persist(); renderCategoryTabs();
       }
     };
-    $c.appendChild(b);
+    frag.appendChild(b);
   });
+  $c.appendChild(frag);
+  // Scroll the active tab into view; first render snaps without animation.
+  const activeBtn = $c.querySelector('.cat-tab.active');
+  if (activeBtn) {
+    if (_catTabsInitialized) activeBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+    else activeBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'auto' });
+    if (refocusActive) { try { activeBtn.focus({ preventScroll: true }); } catch { activeBtn.focus(); } }
+  }
+  _catTabsInitialized = true;
+  updateCatScrollState();
+}
+
+function updateCatScrollState() {
+  const $c = document.getElementById('cat-tabs');
+  const $w = document.getElementById('cat-tabs-wrap');
+  if (!$c || !$w) return;
+  const max = $c.scrollWidth - $c.clientWidth;
+  const left = $c.scrollLeft;
+  // 2px tolerance for sub-pixel rounding.
+  $w.classList.toggle('can-scroll-left', left > 2);
+  $w.classList.toggle('can-scroll-right', left < max - 2);
+}
+
+function bindCatScroll() {
+  const $c = document.getElementById('cat-tabs');
+  const $w = document.getElementById('cat-tabs-wrap');
+  if (!$c || !$w) return;
+  const STEP = 160;
+  const left = document.getElementById('cat-scroll-left');
+  const right = document.getElementById('cat-scroll-right');
+  if (left) left.addEventListener('click', () => $c.scrollBy({ left: -STEP, behavior: 'smooth' }));
+  if (right) right.addEventListener('click', () => $c.scrollBy({ left: STEP, behavior: 'smooth' }));
+  $c.addEventListener('scroll', rafThrottle(updateCatScrollState), { passive: true });
+  if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(rafThrottle(updateCatScrollState));
+    ro.observe($c);
+    ro.observe($w);
+  } else {
+    window.addEventListener('resize', rafThrottle(updateCatScrollState));
+  }
+  // Keyboard navigation between categories when a .cat-tab has focus.
+  $c.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const tab = e.target.closest('.cat-tab');
+    if (!tab) return;
+    e.preventDefault(); e.stopPropagation();
+    const all = Array.from($c.querySelectorAll('.cat-tab'));
+    const idx = all.indexOf(tab);
+    if (idx < 0) return;
+    const nextIdx = e.key === 'ArrowLeft' ? Math.max(0, idx - 1) : Math.min(all.length - 1, idx + 1);
+    const next = all[nextIdx];
+    if (next && next !== tab) { next.focus(); next.click(); }
+  });
+  updateCatScrollState();
 }
 
 function renderBoard() {
@@ -3290,11 +3409,18 @@ function daysUntil(dateStr) {
 }
 
 function openSubsTracker() {
-  document.getElementById('subs-overlay').classList.remove('hidden');
+  const ov = document.getElementById('subs-overlay');
+  rememberOpener(ov);
+  ov.classList.remove('hidden');
   renderSubs();
+  lockBodyScroll();
+  focusFirstIn(ov);
 }
 function closeSubsTracker() {
-  document.getElementById('subs-overlay').classList.add('hidden');
+  const ov = document.getElementById('subs-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
 }
 
 function renderSubs() {
@@ -3604,7 +3730,8 @@ const FLOATING_TOOLS = {
   finance:  { title: 'Finance',  icon: '💰' },
   habits:   { title: 'Habits',   icon: '🔁' },
   water:    { title: 'Water',    icon: '💧' },
-  goals:    { title: 'Goals',    icon: '🎯' }
+  goals:    { title: 'Goals',    icon: '🎯' },
+  subs:     { title: 'Subs',     icon: '💳' }
 };
 
 function getFloating() {
@@ -3633,11 +3760,15 @@ function popOutTool(toolKey) {
     finance:  'fin-overlay',
     habits:   'habit-overlay',
     water:    'water-overlay',
-    goals:    'goals-overlay'
+    goals:    'goals-overlay',
+    subs:     'subs-overlay'
   };
   const ovId = overlayMap[toolKey];
-  if (ovId) document.getElementById(ovId)?.classList.add('hidden');
-  document.body.style.overflow = '';
+  const ovEl = ovId ? document.getElementById(ovId) : null;
+  if (ovEl && !ovEl.classList.contains('hidden')) {
+    ovEl.classList.add('hidden');
+    unlockBodyScroll();
+  }
   State.persist();
   renderFloatingWidgets();
 }
@@ -3789,6 +3920,7 @@ function renderFloatingBody(tool, container) {
   else if (tool === 'habits') renderFloatingHabits(container);
   else if (tool === 'water') renderFloatingWater(container);
   else if (tool === 'goals') renderFloatingGoals(container);
+  else if (tool === 'subs') renderFloatingSubs(container);
 }
 
 function renderFloatingPomo(c) {
@@ -3913,6 +4045,35 @@ function renderFloatingGoals(c) {
       <div class="fw-goal-bar"><div class="fw-goal-fill" style="width:${g.progress || 0}%"></div></div>
       <span class="fw-goal-pct">${g.progress || 0}%</span>
     </div>`).join('')}</div>`;
+}
+
+function renderFloatingSubs(c) {
+  const subs = getSubs();
+  if (!subs.length) {
+    c.innerHTML = `<div class="fw-empty">No subscriptions yet</div>`;
+    return;
+  }
+  const mainCur = State.get().subSettings?.defaultCurrency || 'USD';
+  const monthlyUSD = subs.reduce((a, s) => a + subMonthlyCostUSD(s), 0);
+  const monthly = monthlyUSD / (FX_TO_USD[mainCur] || 1);
+  // Upcoming in 7 days (by next billing date)
+  const upcoming = subs.filter(s => {
+    if (s.paused) return false;
+    const d = daysUntil(s.nextBilling);
+    return d != null && d >= 0 && d <= 7;
+  }).sort((a, b) => (daysUntil(a.nextBilling) ?? 9999) - (daysUntil(b.nextBilling) ?? 9999)).slice(0, 4);
+  c.innerHTML = `
+    <div class="fw-subs">
+      <div class="fw-subs-stat">
+        <div class="fw-subs-lbl">Monthly</div>
+        <div class="fw-subs-val">${formatMoney(monthly, mainCur)}</div>
+      </div>
+      ${upcoming.length ? `<div class="fw-subs-up">${upcoming.map(s => `
+        <div class="fw-subs-row">
+          <span class="fw-subs-name">${esc(s.name)}</span>
+          <span class="fw-subs-days">${(daysUntil(s.nextBilling) || 0)}d</span>
+        </div>`).join('')}</div>` : `<div class="fw-empty">No upcoming bills</div>`}
+    </div>`;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -4411,15 +4572,20 @@ function openPomo() {
   pomoState.mode = 'focus';
   pomoState.remaining = p.settings.focus * 60;
   pomoState.running = false;
+  const ov = document.getElementById('pomo-overlay');
+  rememberOpener(ov);
   renderPomo();
   syncPomoInputs();
-  document.getElementById('pomo-overlay').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
 }
 function closePomo() {
   stopPomoTimer();
-  document.getElementById('pomo-overlay').classList.add('hidden');
-  document.body.style.overflow = '';
+  const ov = document.getElementById('pomo-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
 }
 
 function syncPomoInputs() {
@@ -4441,7 +4607,8 @@ function renderPomo() {
   const total = (pomoState.mode === 'focus' ? p.settings.focus : pomoState.mode === 'short' ? p.settings.short : p.settings.long) * 60;
   const pct = total ? pomoState.remaining / total : 0;
   const circ = 2 * Math.PI * 144;
-  document.querySelector('.pomo-ring-fg').style.strokeDashoffset = String(circ * (1 - pct));
+  if (!_pomoRingEl) _pomoRingEl = document.querySelector('.pomo-ring-fg');
+  if (_pomoRingEl) _pomoRingEl.style.strokeDashoffset = String(circ * (1 - pct));
 
   const m = Math.floor(pomoState.remaining / 60);
   const s = pomoState.remaining % 60;
@@ -4486,24 +4653,22 @@ function renderPomoTasks() {
   const p = getPomo();
   const $list = document.getElementById('pomo-tasks-list');
   $list.innerHTML = '';
+  const frag = document.createDocumentFragment();
   p.tasks.forEach(t => {
     const el = document.createElement('div');
     el.className = 'pomo-task-item' + (t.done ? ' done' : '');
+    el.dataset.taskId = t.id;
     el.innerHTML = `
       <div class="pomo-task-check ${t.done ? 'checked':''}"></div>
       <span class="pomo-task-text">${esc(t.text)}</span>
       <button class="pomo-task-del"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>`;
-    el.querySelector('.pomo-task-check').onclick = () => {
-      t.done = !t.done; State.persist(); renderPomoTasks();
-    };
-    el.querySelector('.pomo-task-del').onclick = () => {
-      const i = p.tasks.indexOf(t); if (i > -1) p.tasks.splice(i, 1);
-      State.persist(); renderPomoTasks();
-    };
-    $list.appendChild(el);
+    frag.appendChild(el);
   });
+  $list.appendChild(frag);
 }
 
+// Cached pomo nodes set on first openPomo() — avoids per-tick querySelector.
+let _pomoRingEl = null, _pomoTimeEl = null, _pomoLastTitle = '';
 // Per-second updates for an active Pomodoro session. Only mutates the
 // ring, time text, and document title — anything else (mode, phase,
 // stats, tasks) needs an explicit renderPomo() call from a state change.
@@ -4511,13 +4676,16 @@ function tickPomo() {
   const p = getPomo();
   const total = (pomoState.mode === 'focus' ? p.settings.focus : pomoState.mode === 'short' ? p.settings.short : p.settings.long) * 60;
   const pct = total ? pomoState.remaining / total : 0;
-  const ring = document.querySelector('.pomo-ring-fg');
-  if (ring) ring.style.strokeDashoffset = String(2 * Math.PI * 144 * (1 - pct));
+  if (!_pomoRingEl) _pomoRingEl = document.querySelector('.pomo-ring-fg');
+  if (_pomoRingEl) _pomoRingEl.style.strokeDashoffset = String(2 * Math.PI * 144 * (1 - pct));
   const m = Math.floor(pomoState.remaining / 60);
   const s = pomoState.remaining % 60;
-  const timeEl = document.getElementById('pomo-time');
-  if (timeEl) timeEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
-  document.title = pomoState.running ? `${m}:${String(s).padStart(2,'0')} · TabExtend` : 'New tabExtend';
+  const timeText = `${m}:${String(s).padStart(2, '0')}`;
+  if (!_pomoTimeEl) _pomoTimeEl = document.getElementById('pomo-time');
+  if (_pomoTimeEl) _pomoTimeEl.textContent = timeText;
+  // document.title writes are surprisingly expensive — only change when needed.
+  const nextTitle = pomoState.running ? `${timeText} · TabExtend` : 'New tabExtend';
+  if (nextTitle !== _pomoLastTitle) { document.title = nextTitle; _pomoLastTitle = nextTitle; }
 }
 function startPomoTimer() {
   if (pomoState.running) return;
@@ -4629,6 +4797,23 @@ function bindPomo() {
     }
   });
 
+  // Delegate task check/delete clicks (renderPomoTasks no longer binds per-row).
+  document.getElementById('pomo-tasks-list').addEventListener('click', e => {
+    const item = e.target.closest('.pomo-task-item');
+    if (!item) return;
+    const id = item.dataset.taskId;
+    const tasks = getPomo().tasks;
+    const idx = tasks.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    if (e.target.closest('.pomo-task-check')) {
+      tasks[idx].done = !tasks[idx].done;
+      State.persist(); renderPomoTasks();
+    } else if (e.target.closest('.pomo-task-del')) {
+      tasks.splice(idx, 1);
+      State.persist(); renderPomoTasks();
+    }
+  });
+
   // Request notification permission on first open
   if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
     Notification.requestPermission().catch(() => {});
@@ -4651,7 +4836,15 @@ const FIN_CATS = [
   { id:'other',     icon:'📦', label:'Other',          color:'#64748b' },
 ];
 const FIN_CUR_SYM = { USD:'$', EUR:'€', GBP:'£', TWD:'NT$', JPY:'¥', CNY:'¥', KRW:'₩' };
-let finRange = 'today';
+function getFinRange() {
+  return getFin().settings.range || 'today';
+}
+function setFinRange(r) {
+  const f = getFin();
+  if (!f.settings) f.settings = {};
+  f.settings.range = r;
+  State.persist();
+}
 
 function getFin() {
   const s = State.get();
@@ -4665,20 +4858,30 @@ function openFin() {
   const $cat = document.getElementById('fin-q-cat');
   $cat.innerHTML = FIN_CATS.map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
   document.getElementById('fin-q-cur').value = f.settings.defaultCurrency || 'TWD';
+  const ov = document.getElementById('fin-overlay');
+  rememberOpener(ov);
   renderFin();
-  document.getElementById('fin-overlay').classList.remove('hidden');
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
 }
-function closeFin() { document.getElementById('fin-overlay').classList.add('hidden'); }
+function closeFin() {
+  const ov = document.getElementById('fin-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
+}
 
 function finFilteredTxns() {
   const f = getFin();
   const now = new Date();
+  const r = getFinRange();
   let start;
-  if (finRange === 'today') {
+  if (r === 'today') {
     start = new Date(now); start.setHours(0,0,0,0);
-  } else if (finRange === 'week') {
+  } else if (r === 'week') {
     start = new Date(now); start.setDate(start.getDate() - 7);
-  } else if (finRange === 'month') {
+  } else if (r === 'month') {
     start = new Date(now); start.setDate(1); start.setHours(0,0,0,0);
   } else {
     start = new Date(0);
@@ -4711,7 +4914,8 @@ function renderFin() {
   };
   document.getElementById('fin-spent').textContent = fmt(total);
   document.getElementById('fin-count').textContent = txns.length;
-  const days = finRange === 'today' ? 1 : finRange === 'week' ? 7 : finRange === 'month' ? new Date().getDate() : Math.max(1, Math.ceil((Date.now() - (f.txns[0] ? new Date(f.txns[f.txns.length-1].date).getTime() : Date.now()))/86400000));
+  const _r = getFinRange();
+  const days = _r === 'today' ? 1 : _r === 'week' ? 7 : _r === 'month' ? new Date().getDate() : Math.max(1, Math.ceil((Date.now() - (f.txns[0] ? new Date(f.txns[f.txns.length-1].date).getTime() : Date.now()))/86400000));
   document.getElementById('fin-avg').textContent = fmt(total / days);
   const top = Object.entries(byCat).sort((a,b) => b[1]-a[1])[0];
   document.getElementById('fin-top').textContent = top ? FIN_CATS.find(c => c.id === top[0])?.icon + ' ' + FIN_CATS.find(c => c.id === top[0])?.label : '—';
@@ -4722,6 +4926,7 @@ function renderFin() {
   const catEntries = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
   if (!catEntries.length) { $cats.innerHTML = `<div class="fin-empty">No spending recorded in this period.</div>`; }
   else {
+    const frag = document.createDocumentFragment();
     catEntries.forEach(([catId, val]) => {
       const cat = FIN_CATS.find(c => c.id === catId) || FIN_CATS[FIN_CATS.length-1];
       const pct = total ? (val / total * 100) : 0;
@@ -4738,15 +4943,17 @@ function renderFin() {
           <div class="fci-val">${fmt(val)}</div>
           <div class="fci-pct">${pct.toFixed(0)}%</div>
         </div>`;
-      $cats.appendChild(row);
+      frag.appendChild(row);
     });
+    $cats.appendChild(frag);
   }
 
-  // Transactions
+  // Transactions — delegate clicks via bindFin's single listener on #fin-list.
   const $list = document.getElementById('fin-list');
   $list.innerHTML = '';
   if (!txns.length) { $list.innerHTML = `<div class="fin-empty">No transactions. Add one above.</div>`; }
   else {
+    const frag = document.createDocumentFragment();
     txns.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
       const cat = FIN_CATS.find(c => c.id === t.category) || FIN_CATS[FIN_CATS.length-1];
       const tSym = FIN_CUR_SYM[t.currency] || '$';
@@ -4756,6 +4963,7 @@ function renderFin() {
       const dateStr = d.toLocaleDateString('en', { month:'short', day:'numeric' });
       const row = document.createElement('div');
       row.className = 'fin-tx-row';
+      row.dataset.txId = t.id;
       row.innerHTML = `
         <span class="ftx-icon">${cat.icon}</span>
         <div class="ftx-info">
@@ -4766,18 +4974,13 @@ function renderFin() {
         <button class="ftx-del" title="Delete">
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V1.5h3V3M3 3v7a1 1 0 001 1h4a1 1 0 001-1V3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>`;
-      row.querySelector('.ftx-del').onclick = () => {
-        if (!confirm('Delete this transaction?')) return;
-        State.snapshot('Delete tx');
-        const all = getFin().txns; const i = all.findIndex(x => x.id === t.id);
-        if (i > -1) all.splice(i, 1);
-        State.persist(); renderFin();
-      };
-      $list.appendChild(row);
+      frag.appendChild(row);
     });
+    $list.appendChild(frag);
   }
 
-  document.querySelectorAll('.fin-tab').forEach(b => b.classList.toggle('active', b.dataset.range === finRange));
+  const _activeRange = getFinRange();
+  document.querySelectorAll('.fin-tab').forEach(b => b.classList.toggle('active', b.dataset.range === _activeRange));
 }
 
 function addFinTxn() {
@@ -4820,8 +5023,21 @@ function bindFin() {
   document.getElementById('fin-q-add').onclick = addFinTxn;
   document.getElementById('fin-q-amt').addEventListener('keydown', e => { if (e.key === 'Enter') addFinTxn(); });
   document.getElementById('fin-q-note').addEventListener('keydown', e => { if (e.key === 'Enter') addFinTxn(); });
-  document.querySelectorAll('.fin-tab').forEach(b => b.onclick = () => { finRange = b.dataset.range; renderFin(); });
+  document.querySelectorAll('.fin-tab').forEach(b => b.onclick = () => { setFinRange(b.dataset.range); renderFin(); });
   document.getElementById('fin-export').onclick = exportFinCSV;
+  // Delegate tx delete clicks once, not per-row on every render.
+  document.getElementById('fin-list').addEventListener('click', e => {
+    const delBtn = e.target.closest('.ftx-del');
+    if (!delBtn) return;
+    const row = delBtn.closest('.fin-tx-row');
+    const id = row?.dataset.txId;
+    if (!id) return;
+    if (!confirm('Delete this transaction?')) return;
+    State.snapshot('Delete tx');
+    const all = getFin().txns; const i = all.findIndex(x => x.id === id);
+    if (i > -1) all.splice(i, 1);
+    State.persist(); renderFin();
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -4834,10 +5050,19 @@ function getHabits() {
 }
 
 function openHabits() {
+  const ov = document.getElementById('habit-overlay');
+  rememberOpener(ov);
   renderHabits();
-  document.getElementById('habit-overlay').classList.remove('hidden');
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
 }
-function closeHabits() { document.getElementById('habit-overlay').classList.add('hidden'); }
+function closeHabits() {
+  const ov = document.getElementById('habit-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
+}
 
 function renderHabits() {
   const habits = getHabits();
@@ -4851,11 +5076,13 @@ function renderHabits() {
     const d = new Date(); d.setDate(d.getDate() - i);
     days.push(d.toISOString().slice(0,10));
   }
+  const frag = document.createDocumentFragment();
   habits.forEach(h => {
     const doneSet = new Set(h.dates || []);
     const streak = computeHabitStreak(h);
     const row = document.createElement('div');
     row.className = 'habit-row';
+    row.dataset.habitId = h.id;
     row.innerHTML = `
       <div class="hab-icon">${esc(h.icon || '✅')}</div>
       <div class="hab-info">
@@ -4867,22 +5094,9 @@ function renderHabits() {
       </div>
       <button class="hab-toggle ${doneSet.has(today) ? 'done':''}">${doneSet.has(today) ? '✓ Done' : 'Mark done'}</button>
       <button class="hab-del" title="Delete"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M4.5 3V1.5h3V3M3 3v7a1 1 0 001 1h4a1 1 0 001-1V3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
-    row.querySelector('.hab-toggle').onclick = () => {
-      State.snapshot('Habit toggle');
-      h.dates = h.dates || [];
-      if (doneSet.has(today)) h.dates = h.dates.filter(d => d !== today);
-      else h.dates.push(today);
-      State.persist(); renderHabits();
-    };
-    row.querySelector('.hab-del').onclick = () => {
-      if (!confirm(`Delete habit "${h.name}"?`)) return;
-      State.snapshot('Delete habit');
-      const idx = habits.findIndex(x => x.id === h.id);
-      if (idx > -1) habits.splice(idx, 1);
-      State.persist(); renderHabits();
-    };
-    $list.appendChild(row);
+    frag.appendChild(row);
   });
+  $list.appendChild(frag);
 }
 
 function computeHabitStreak(h) {
@@ -4915,6 +5129,29 @@ function bindHabits() {
     e.stopPropagation();
     openEmojiPicker({ kind: 'habit-icon' }, e.currentTarget);
   };
+  // Delegate toggle/delete clicks once, not per-row on every render.
+  document.getElementById('habit-list').addEventListener('click', e => {
+    const row = e.target.closest('.habit-row');
+    if (!row) return;
+    const id = row.dataset.habitId;
+    const habits = getHabits();
+    const h = habits.find(x => x.id === id);
+    if (!h) return;
+    if (e.target.closest('.hab-toggle')) {
+      State.snapshot('Habit toggle');
+      const today = new Date().toISOString().slice(0,10);
+      h.dates = h.dates || [];
+      const idx = h.dates.indexOf(today);
+      if (idx > -1) h.dates.splice(idx, 1); else h.dates.push(today);
+      State.persist(); renderHabits();
+    } else if (e.target.closest('.hab-del')) {
+      if (!confirm(`Delete habit "${h.name}"?`)) return;
+      State.snapshot('Delete habit');
+      const idx = habits.findIndex(x => x.id === id);
+      if (idx > -1) habits.splice(idx, 1);
+      State.persist(); renderHabits();
+    }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -4926,8 +5163,20 @@ function getWater() {
   return s.water;
 }
 
-function openWater() { renderWater(); document.getElementById('water-overlay').classList.remove('hidden'); }
-function closeWater() { document.getElementById('water-overlay').classList.add('hidden'); }
+function openWater() {
+  const ov = document.getElementById('water-overlay');
+  rememberOpener(ov);
+  renderWater();
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
+}
+function closeWater() {
+  const ov = document.getElementById('water-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
+}
 
 function renderWater() {
   const w = getWater();
@@ -4997,8 +5246,20 @@ function getBooks() {
   if (!s.books) s.books = [];
   return s.books;
 }
-function openBooks() { renderBooks(); document.getElementById('books-overlay').classList.remove('hidden'); }
-function closeBooks() { document.getElementById('books-overlay').classList.add('hidden'); }
+function openBooks() {
+  const ov = document.getElementById('books-overlay');
+  rememberOpener(ov);
+  renderBooks();
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
+}
+function closeBooks() {
+  const ov = document.getElementById('books-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
+}
 function renderBooks() {
   const books = getBooks().filter(b => b.status === booksFilter);
   const $list = document.getElementById('books-list');
@@ -5067,8 +5328,20 @@ function getGoals() {
   if (!s.goals) s.goals = [];
   return s.goals;
 }
-function openGoals() { renderGoals(); document.getElementById('goals-overlay').classList.remove('hidden'); }
-function closeGoals() { document.getElementById('goals-overlay').classList.add('hidden'); }
+function openGoals() {
+  const ov = document.getElementById('goals-overlay');
+  rememberOpener(ov);
+  renderGoals();
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
+}
+function closeGoals() {
+  const ov = document.getElementById('goals-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
+}
 function renderGoals() {
   const goals = getGoals();
   const $list = document.getElementById('goals-list');
@@ -5149,8 +5422,20 @@ function getWorkouts() {
   if (!s.workouts) s.workouts = [];
   return s.workouts;
 }
-function openWorkout() { renderWorkout(); document.getElementById('workout-overlay').classList.remove('hidden'); }
-function closeWorkout() { document.getElementById('workout-overlay').classList.add('hidden'); }
+function openWorkout() {
+  const ov = document.getElementById('workout-overlay');
+  rememberOpener(ov);
+  renderWorkout();
+  ov.classList.remove('hidden');
+  lockBodyScroll();
+  focusFirstIn(ov);
+}
+function closeWorkout() {
+  const ov = document.getElementById('workout-overlay');
+  ov.classList.add('hidden');
+  unlockBodyScroll();
+  restoreOpener(ov);
+}
 function renderWorkout() {
   const wos = getWorkouts().slice().sort((a,b) => new Date(b.date) - new Date(a.date));
   // Stats: this week minutes, count, this month
@@ -5448,7 +5733,23 @@ function bindStatic() {
       document.getElementById('ws-grid-overlay').classList.add('hidden');
       document.getElementById('ws-list').classList.add('hidden');
       document.getElementById('emoji-picker')?.classList.add('hidden');
-      document.getElementById('subs-overlay')?.classList.add('hidden');
+      // Tool overlays — route through dedicated close fns so scroll-lock,
+      // snapshot, and opener-restore semantics stay correct.
+      const _toolCloses = [
+        ['pomo-overlay',    closePomo],
+        ['fin-overlay',     closeFin],
+        ['habit-overlay',   closeHabits],
+        ['water-overlay',   closeWater],
+        ['books-overlay',   closeBooks],
+        ['goals-overlay',   closeGoals],
+        ['workout-overlay', closeWorkout],
+        ['subs-overlay',    closeSubsTracker],
+        ['tools-hub',       closeToolsHub]
+      ];
+      for (const [id, fn] of _toolCloses) {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) { fn(); break; }
+      }
       const _imp = document.getElementById('import-overlay');
       if (_imp && !_imp.classList.contains('hidden')) closeImportPreview();
       const _cs = document.getElementById('cheatsheet-overlay');
@@ -5479,6 +5780,7 @@ function bindStatic() {
   bindQuotaOverlay();
   bindCheatsheetOverlay();
   bindBoardArrowNav();
+  bindCatScroll();
   bindSubs();
   bindToolsHub();
   bindPomo();
@@ -5511,7 +5813,7 @@ function bindStatic() {
   };
 
   // Floating tool widgets - pop-out buttons
-  ['pomodoro:pomo-popout', 'finance:fin-popout', 'habits:habit-popout', 'water:water-popout', 'goals:goals-popout']
+  ['pomodoro:pomo-popout', 'finance:fin-popout', 'habits:habit-popout', 'water:water-popout', 'goals:goals-popout', 'subs:subs-popout']
     .forEach(p => {
       const [tool, btnId] = p.split(':');
       const btn = document.getElementById(btnId);
