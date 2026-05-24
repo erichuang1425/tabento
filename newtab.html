@@ -9,7 +9,33 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,400&family=Inter:wght@400..700&family=IBM+Plex+Sans:wght@400..600&family=JetBrains+Mono:wght@400..600&family=Lora:wght@400..600&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="newtab.css">
 </head>
-<body data-theme="dark" data-size="normal" data-font="dm" data-width="normal">
+<body>
+  <script>
+    // Pre-init: apply saved theme/size/font/width before any paint to
+    // eliminate the dark->light flash on launch. Reads a localStorage
+    // mirror written by applySettings(); falls back to prefers-color-scheme.
+    // Also marks body as loading so it fades in once renderAll() finishes.
+    (function () {
+      var b = document.body, m = {};
+      try { m = JSON.parse(localStorage.getItem('te_settings_mirror') || '{}') || {}; } catch (e) {}
+      var theme = m.theme;
+      if (!theme || theme === 'auto') {
+        theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      b.dataset.theme = theme;
+      b.dataset.size  = m.size  || 'normal';
+      b.dataset.font  = m.font  || 'dm';
+      b.dataset.width = m.width || 'normal';
+      if (m.anim === 'off') b.dataset.anim = 'off';
+      // Skip fade-in for users who disabled animations or prefer reduced motion.
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (m.anim !== 'off' && !reduced) {
+        b.classList.add('app-loading');
+        // Safety: if init never fires, reveal anyway after 1s.
+        setTimeout(function () { b.classList.remove('app-loading'); b.classList.add('app-ready'); }, 1000);
+      }
+    })();
+  </script>
   <div id="app">
 
     <!-- ══════ SIDEBAR ══════ -->
@@ -61,7 +87,15 @@
       <header id="topbar">
         <div class="tb-left">
           <h1 id="ws-title"><span id="ws-title-sym">🏠</span><span id="ws-title-name">Workspace</span></h1>
-          <div class="cat-tabs" id="cat-tabs"></div>
+          <div class="cat-tabs-wrap" id="cat-tabs-wrap">
+            <button class="cat-scroll-btn left" id="cat-scroll-left" tabindex="-1" aria-label="Scroll categories left">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7 2L3.5 5.5 7 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="cat-tabs" id="cat-tabs"></div>
+            <button class="cat-scroll-btn right" id="cat-scroll-right" tabindex="-1" aria-label="Scroll categories right">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M4 2l3.5 3.5L4 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
           <button id="add-cat-btn" class="icon-btn sm" title="New category">
             <svg width="13" height="13" viewBox="0 0 13 13"><path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </button>
@@ -555,9 +589,14 @@
             <div class="subs-subtitle" id="subs-subtitle">Track your recurring costs</div>
           </div>
         </div>
-        <button id="subs-close" class="icon-btn">
-          <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        </button>
+        <div style="display:flex;align-items:center">
+          <button id="subs-popout" class="tool-popout-btn" title="Pop out as floating widget">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9 2h3v3M12 2L7 7M11 9v2.5a.5.5 0 01-.5.5h-7a.5.5 0 01-.5-.5v-7a.5.5 0 01.5-.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="subs-close" class="icon-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
 
       <div class="subs-stats">
@@ -1109,7 +1148,7 @@
   </div>
 
   <!-- Toast with undo button -->
-  <script src="emoji-data.js"></script>
+  <!-- emoji-data.js is loaded lazily on first emoji-picker open (see loadEmojiData). -->
   <script src="newtab.js"></script>
 </body>
 </html>
