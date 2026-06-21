@@ -2949,6 +2949,10 @@ function itemNodeType(el) {
 }
 function applySearchFilter() {
   const raw = document.getElementById('search-input').value.toLowerCase().trim();
+  // Clear any stack we force-opened on a previous keystroke; the reveal pass below
+  // re-adds it only for stacks that still contain a match (so cleared/changed queries
+  // restore the user's real collapse state).
+  document.querySelectorAll('.search-expand').forEach(n => n.classList.remove('search-expand'));
   // Tokenize honoring "quoted phrases" BEFORE pulling operators, so a quoted phrase
   // survives intact next to an operator (e.g. type:todo "due today"). Structured
   // operators (the plan's borrowed-from-Refern search operators):
@@ -3015,13 +3019,23 @@ function applySearchFilter() {
     if (match && hasText) match = matchText(hd);
     hd.classList.toggle('hidden', !match);
   });
-  // Keep ancestor stacks visible when a descendant item matches — otherwise a
-  // colored item nested in an (uncolored) stack is hidden by its parent.
+  // Reveal ancestor stacks of every matching item so the match is actually visible,
+  // even if the stack itself didn't match or is collapsed.
   if (raw) {
     getItemNodes().forEach(el => {
       if (el.classList.contains('hidden')) return;
-      let p = el.parentElement?.closest('.item.stack');
-      while (p) { p.classList.remove('hidden'); p = p.parentElement?.closest('.item.stack'); }
+      // Board: the .item.stack is an ancestor wrapping its children — unhide it and
+      // force it open (collapsed stacks clip children to max-height:0 via CSS).
+      let bp = el.parentElement?.closest('.item.stack');
+      while (bp) { bp.classList.remove('hidden'); bp.classList.add('search-expand'); bp = bp.parentElement?.closest('.item.stack'); }
+      // List view: header and children are siblings inside .lv-stack — keep the header
+      // visible and open the (otherwise collapsed) children container.
+      let lp = el.closest('.lv-stack');
+      while (lp) {
+        lp.classList.add('search-expand');
+        lp.querySelector(':scope > .lv-stack-hd')?.classList.remove('hidden');
+        lp = lp.parentElement?.closest('.lv-stack');
+      }
     });
   }
   document.querySelectorAll('.gcol').forEach(col => {
