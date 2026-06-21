@@ -2989,7 +2989,17 @@ function applySearchFilter() {
   const hasType = typeFilters.length > 0;
   const hasState = stateFilters.length > 0;
   const hasText = textNeedles.length > 0;
-  const matchText = el => { const t = el.textContent.toLowerCase(); return textNeedles.every(n => t.includes(n)); };
+  // Board/canvas stacks render their name in a .stack-name <input>, whose value is NOT
+  // part of textContent — fold the stack's own name in so text / type:stack search can
+  // match it (e.g. an empty stack named "Alpha"). List-view headers render the name as
+  // text already, so they're unaffected.
+  const matchText = el => {
+    let t = el.textContent;
+    const nameInput = el.querySelector(':scope > .stack-hd > .stack-name');
+    if (nameInput) t += ' ' + nameInput.value;
+    t = t.toLowerCase();
+    return textNeedles.every(n => t.includes(n));
+  };
   getItemNodes().forEach(el => {
     if (!raw) { el.classList.remove('hidden'); return; }
     let match = true;
