@@ -136,7 +136,9 @@ No host permissions — the extension does not read web page content.
 
 ## Themes
 
-Dark, Light, Dracula, Nord, Rosé Pine, Tokyo Night, Solarized Dark/Light, Gruvbox, Catppuccin, Sepia, Mono. Switchable in Settings → Appearance or via topbar theme button (cycles through).
+**Aurora** (default — TabNest's signature ink + teal→violet identity), Dark, Light, Dracula, Nord, Rosé Pine, Tokyo Night, Solarized Dark/Light, Gruvbox, Catppuccin, Sepia, Mono. Switchable in Settings → Appearance or via topbar theme button (cycles through).
+
+See [`DESIGN.md`](DESIGN.md) for the layout direction and how TabNest stays visually distinct from similar products.
 
 ## v3 features (latest)
 
