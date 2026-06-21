@@ -15,6 +15,18 @@
   --note-bg: #1e1e18; --note-bd: rgba(234,179,8,0.18);
 }
 
+/* Aurora — TabNest signature theme (default). Ink base + teal→violet accent.
+   Deliberately distinct from TabExtend (pastel-light) and Refern (gallery-grey). */
+[data-theme="aurora"] {
+  --bg: #0a0c14; --bg2: #11141f; --bg3: #181c2b; --bg4: #222840; --bg5: #2f3754;
+  --panel: #0f1320;
+  --border: rgba(180,200,255,0.08); --border2: rgba(180,200,255,0.16);
+  --text: #eef1fb; --text2: #9aa3c4; --text3: #5a6386;
+  --accent: #5eead4; --accent2: #a78bfa; --accent-bg: #14b8a6; --accent-hover: #0f9d8f;
+  --green: #34d399; --red: #fb7185; --yellow: #fbbf24; --orange: #fb923c; --blue: #60a5fa;
+  --note-bg: #15201d; --note-bd: rgba(94,234,212,0.18);
+}
+
 [data-theme="light"] {
   --bg: #f4f4f7; --bg2: #ffffff; --bg3: #f0f0f5; --bg4: #e5e5ed; --bg5: #d0d0db;
   --panel: #ffffff;
@@ -214,6 +226,10 @@
 
   /* Backdrop blur (use everywhere overlays exist) */
   --blur: 6px;
+
+  /* Brand through-line — derived from each theme's own accents so the gradient
+     identity travels across every theme. Our signature, not a borrowed one. */
+  --brand-grad: linear-gradient(135deg, var(--accent), var(--accent2));
 }
 [data-theme="light"], [data-theme="solarized-light"], [data-theme="sepia"] {
   --shadow-1: 0 2px 8px rgba(15,15,30,0.05);
@@ -662,8 +678,18 @@ body[data-anim="off"] .cat-tabs-wrap::after {
   display: flex; align-items: center; gap: 6px;
 }
 .cat-tab:hover { background: var(--bg3); color: var(--text); }
-.cat-tab.active { background: var(--accent-bg); color: white; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent-bg) 38%, transparent); }
-.cat-tab.active:hover { background: var(--accent-hover); }
+/* Signature: active category is marked by a gradient underline (not a solid pill).
+   Painted via background layers so it never collides with the drop ::before/::after. */
+.cat-tab.active {
+  color: var(--text); font-weight: 600; box-shadow: none;
+  background: var(--brand-grad) bottom center / calc(100% - 24px) 2px no-repeat;
+}
+.cat-tab.active:hover {
+  color: var(--text);
+  background:
+    var(--brand-grad) bottom center / calc(100% - 24px) 2px no-repeat,
+    var(--bg3);
+}
 .cat-tab.dragging { opacity: 0.4; }
 .cat-tab.drop-before::before {
   content: ''; position: absolute;
@@ -1542,8 +1568,8 @@ body[data-show-urls="off"] .item-url { display: none; }
   transition: all var(--trans);
   position: relative; overflow: hidden;
 }
-.btn-primary { background: var(--accent-bg); color: #fff; }
-.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-primary { background: var(--brand-grad); color: #fff; }
+.btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .btn-primary:active { transform: translateY(0); }
 .btn-secondary { background: var(--bg3); color: var(--text2); border-color: var(--border); }
 .btn-secondary:hover { background: var(--bg4); color: var(--text); }

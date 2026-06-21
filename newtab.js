@@ -16,7 +16,7 @@ const State = (() => {
     workspaces: [], activeWsId: null, archive: [], recentEmoji: [],
     columnWidths: {},
     settings: {
-      theme:'dark', size:'normal', font:'dm', width:'normal',
+      theme:'aurora', size:'normal', font:'dm', width:'normal',
       closeTabOnSave:true, hibernate:true, showUrls:true,
       animate:true, confirmDelete:true, sidebarCollapsed:false,
       blurPrivacy:false, windowSync:false
@@ -533,6 +533,7 @@ function ensureDefault() {
 // SETTINGS
 // ════════════════════════════════════════════════════════════════
 const THEMES = [
+  { id:'aurora',           label:'Aurora',           colors:['#0a0c14','#5eead4','#a78bfa'] },
   { id:'dark',             label:'Dark',             colors:['#0b0b10','#6366f1','#9b9bb4'] },
   { id:'light',            label:'Light',            colors:['#f4f4f7','#4f46e5','#52525e'] },
   { id:'dracula',          label:'Dracula',          colors:['#282a36','#bd93f9','#50fa7b'] },
@@ -6432,7 +6433,7 @@ function bindStatic() {
   document.getElementById('tab-filter').onkeydown = e => { if (e.key === 'Escape') { e.target.value = ''; applyFilter(); e.target.blur(); } };
 
   document.getElementById('theme-btn').onclick = () => {
-    const cycle = ['dark','light','dracula','nord','rose-pine','tokyo-night','solarized-dark','solarized-light','gruvbox','catppuccin','sepia','mono'];
+    const cycle = ['aurora','dark','light','dracula','nord','rose-pine','tokyo-night','solarized-dark','solarized-light','gruvbox','catppuccin','sepia','mono'];
     const i = cycle.indexOf(State.get().settings.theme);
     State.get().settings.theme = cycle[(i + 1) % cycle.length];
     applySettings();
