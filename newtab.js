@@ -2962,6 +2962,15 @@ function applySearchFilter() {
     }
     el.classList.toggle('hidden', !match);
   });
+  // Keep ancestor stacks visible when a descendant item matches — otherwise a
+  // colored item nested in an (uncolored) stack is hidden by its parent.
+  if (raw) {
+    getItemNodes().forEach(el => {
+      if (el.classList.contains('hidden')) return;
+      let p = el.parentElement?.closest('.item.stack');
+      while (p) { p.classList.remove('hidden'); p = p.parentElement?.closest('.item.stack'); }
+    });
+  }
   document.querySelectorAll('.gcol').forEach(col => {
     const any = col.querySelectorAll('.item:not(.hidden)').length > 0;
     col.style.display = (!raw || any) ? '' : 'none';
