@@ -1,63 +1,59 @@
 # TabNest
 
 <p>
-  <a href="./manifest.json">
-    <img src="https://img.shields.io/badge/version-v3.0.0-4f46e5?style=flat-square" alt="version v3.0.0"/>
-  </a>
-  <a href="./manifest.json">
-    <img src="https://img.shields.io/badge/Manifest-MV3-0f766e?style=flat-square&logo=googlechrome&logoColor=white" alt="Manifest V3"/>
-  </a>
-  <a href="./RELEASE_NOTES.md">
-    <img src="https://img.shields.io/badge/releases-notes-111827?style=flat-square" alt="release notes"/>
-  </a>
-  <img src="https://img.shields.io/badge/storage-local--first-2563eb?style=flat-square" alt="local-first storage"/>
-  <img src="https://img.shields.io/badge/host%20permissions-none-16a34a?style=flat-square" alt="no host permissions"/>
-  <img src="https://img.shields.io/badge/build-no%20build%20step-f97316?style=flat-square" alt="no build step"/>
+  <a href="./manifest.json"><img src="https://img.shields.io/badge/version-v3.0.0-4f46e5?style=flat-square" alt="version v3.0.0"></a>
+  <a href="./manifest.json"><img src="https://img.shields.io/badge/Manifest-MV3-0f766e?style=flat-square&logo=googlechrome&logoColor=white" alt="Manifest V3"></a>
+  <img src="https://img.shields.io/badge/local--first-2563eb?style=flat-square" alt="local-first">
+  <img src="https://img.shields.io/badge/host%20permissions-none-16a34a?style=flat-square" alt="no host permissions">
+  <img src="https://img.shields.io/badge/build-no%20build%20step-f97316?style=flat-square" alt="no build step">
 </p>
 
-**A private visual workspace for browser tabs, notes, todos, stacks, reminders, and small personal tracking tools.**
+**A local-first new tab workspace for saved tabs, notes, todos, reminders, and small trackers.**
 
-TabNest replaces the Chromium new tab page with a local-first command center for the browser sessions you want to keep. Save tabs, arrange them into workspaces, mix them with notes and todos, search with operators, reopen them later, and hibernate saved pages so your browser stays lighter until you need the context again.
+TabNest replaces the Chromium new tab page. It helps you save tabs, group them with notes and todos, search them later, and reopen pages without keeping every tab loaded. Data stays in `chrome.storage.local`; the extension has no account system, no server, no host permissions, and no page-content reading.
 
 <p align="center">
-  <img src="./icons/icon128.png" alt="TabNest icon" width="120"/>
+  <img src="./icons/icon128.png" alt="TabNest icon" width="120">
 </p>
 
 <p align="center">
   <samp>
-    <a href="#features">Features</a> &middot;
-    <a href="#tags">Tags</a> &middot;
-    <a href="#install">Install</a> &middot;
-    <a href="#releases">Releases</a> &middot;
-    <a href="#privacy">Privacy</a> &middot;
-    <a href="#development">Development</a>
+    <a href="#why-tabnest">Why</a> |
+    <a href="#features">Features</a> |
+    <a href="#screenshots">Screenshots</a> |
+    <a href="#install">Install</a> |
+    <a href="#development">Development</a> |
+    <a href="#roadmap">Roadmap</a>
   </samp>
 </p>
 
 ---
 
-## Overview
+## Why TabNest
 
-Modern browser sessions can turn into a pile of research links, articles, half-written thoughts, tasks, and reminders. TabNest gives that mess a calmer home:
+Browser work is rarely just tabs. A session can include research links, half-written plans, reminders, reference pages, recurring routines, and things you want to reopen later without keeping them alive forever.
 
-- **Save context** from the current tab, the whole window, bookmarks, or the browser context menu.
-- **Organize visually** with workspaces, categories, groups, nested stacks, colors, board/list/focus/canvas views, and drag-and-drop.
-- **Think in one place** by mixing tabs, notes, todos, reminders, and lightweight trackers instead of scattering them across apps.
-- **Find things again** with plain text search, quoted phrases, negative filters, and structured operators.
-- **Keep data private** in `chrome.storage.local`; no host permissions and no page-content reading.
+TabNest keeps that context in the new tab page:
+
+- Save the current tab, every tab in a window, bookmarks, links, selections, or images.
+- Organize saved context into workspaces, categories, groups, stacks, colors, and views.
+- Mix tabs with notes, todos, reminders, and personal trackers without leaving the new tab page.
+- Search by words, quoted phrases, color, item type, domain, URL, location, todo state, and reminders.
+- Reopen saved pages directly or through a hibernated placeholder so the browser stays lighter.
 
 ## Features
 
-| Area | What TabNest Does |
+| Area | What you can do |
 | --- | --- |
-| Workspaces | Multiple named workspaces, category tabs, window binding, group focus, archive, and undo/redo. |
-| Saved items | Tabs, notes, todos, recursive stacks, color labels, reminders, batch selection, and card actions. |
-| Views | Board, list, focused group, and free-positioned canvas layouts for different planning styles. |
-| Search | Operators for `type:`, `color:`, `domain:`, `url:`, `in:`, `is:`, `has:reminder`, and `reminder:`. Prefix any term with `-` to exclude it. |
-| Hibernation | Saved tabs can open through a lightweight suspended page and load only when activated. |
-| Popup | Quick-save the current tab, save all open tabs, and review open tabs from the extension action. |
-| Tools | Pomodoro, finance diary, subscriptions, habits, hydration, reading tracker, goals, and workouts. |
-| Portability | Versioned export/import flow with preview before restore. |
+| Workspaces | Create multiple workspaces, bind them to browser windows, switch categories, focus a group, archive context, and undo or redo changes. |
+| Saved items | Store tabs, notes, todos, stacks inside stacks, color labels, reminders, and selected batches of cards. |
+| Views | Move between board, list, focused group, and free-positioned canvas layouts depending on the kind of work. |
+| Search | Combine text search with `type:`, `color:`, `domain:`, `site:`, `url:`, `in:`, `is:`, `has:reminder`, and `reminder:` operators. Prefix terms with `-` to exclude matches. |
+| Hibernation | Open saved tabs through `suspended.html` and load the destination only when you activate it. |
+| Popup | Save the current tab, save every open tab, and inspect open tabs from the extension action. |
+| Tools | Use built-in Pomodoro, finance diary, subscriptions, habits, hydration, reading, goals, and workout trackers. |
+| Portability | Export and import data with a versioned envelope and preview step before restore. |
+| Privacy | Keep data in `chrome.storage.local`; TabNest requests no host permissions and does not read page content. |
 
 Example search:
 
@@ -65,35 +61,23 @@ Example search:
 type:tab in:work domain:github.com "pull request" -is:done
 ```
 
-## Tags
+## Screenshots
 
-<p>
-  <img src="https://img.shields.io/badge/browser--extension-111827?style=flat-square" alt="browser-extension"/>
-  <img src="https://img.shields.io/badge/chrome--extension-111827?style=flat-square" alt="chrome-extension"/>
-  <img src="https://img.shields.io/badge/manifest--v3-111827?style=flat-square" alt="manifest-v3"/>
-  <img src="https://img.shields.io/badge/tab--manager-111827?style=flat-square" alt="tab-manager"/>
-  <img src="https://img.shields.io/badge/local--first-111827?style=flat-square" alt="local-first"/>
-  <img src="https://img.shields.io/badge/vanilla--javascript-111827?style=flat-square" alt="vanilla-javascript"/>
-</p>
+Screenshots still need to be captured. The table below lists the views that should be added to the README and browser-store listing.
 
-Suggested GitHub topics for the repository:
+| Workspace board | Focus and search | Popup capture |
+| --- | --- | --- |
+| Board, categories, groups, and nested stacks. | Operators, archive visibility, and focused group flow. | Current-tab and all-tabs save workflow. |
 
-```text
-browser-extension
-chrome-extension
-manifest-v3
-tab-manager
-new-tab
-productivity
-workspace
-local-first
-privacy-first
-vanilla-javascript
-notes
-todos
-reminders
-tab-hibernation
-```
+## Tech stack
+
+- **Platform:** Chromium extension, Manifest V3
+- **Languages:** Vanilla JavaScript, HTML, CSS
+- **Storage:** `chrome.storage.local`
+- **Background runtime:** MV3 service worker
+- **Browser APIs:** tabs, storage, context menus, bookmarks, alarms, notifications
+- **Build tooling:** none required
+- **CI:** GitHub Actions syntax and manifest validation
 
 ## Install
 
@@ -104,51 +88,23 @@ tab-hibernation
 5. Select the repository folder.
 6. Open a new tab to launch TabNest.
 
-After editing files, reload the extension from the browser extensions page.
+After editing extension files, reload TabNest from the browser extensions page.
 
-## Releases
+## Usage
 
-### Latest: `v3.0.0`
+- Open a new tab to use the main workspace.
+- Use the extension popup to save the current tab or all open tabs.
+- Right-click supported browser content to save pages, links, selections, and images.
+- Use groups and stacks to shape a workspace around projects, reading queues, planning areas, or recurring routines.
+- Use search operators when plain text is not enough:
 
-TabNest `v3.0.0` is the current local developer release.
+```text
+color:red,blue type:todo -is:done
+site:github.com url:/issues in:research
+has:reminder reminder:overdue
+```
 
-Included in this release:
-
-- New-tab workspace with board, list, group focus, and canvas views.
-- Workspaces, categories, groups, nested stacks, color coding, and drag-and-drop organization.
-- Saved tabs, notes, todos, reminders, archive search, undo/redo, and batch actions.
-- Advanced search operators for item type, color, todo state, tab domain, URL, containing group or stack, reminder state, quoted phrases, and negative filters.
-- Hibernated tab opening through `suspended.html`.
-- Popup quick-save flow for the current tab or all open tabs.
-- Built-in Pomodoro, finance, subscriptions, habits, hydration, reading, goals, and workout tools.
-- Versioned import/export support with preview.
-- Local-first privacy posture with no host permissions.
-
-Full release notes are tracked in [RELEASE_NOTES.md](./RELEASE_NOTES.md).
-
-For a GitHub release, create tag `v3.0.0` and attach a zipped extension package after running the validation checks below.
-
-## Privacy
-
-TabNest is built around a local-first data model:
-
-- Stored URLs, titles, notes, todos, reminders, and tool data live in `chrome.storage.local`.
-- The extension does not request host permissions.
-- The extension does not read page content.
-- Browser permissions are limited to tab workflows, storage, context menus, bookmarks import, alarms, and notifications.
-
-| Permission | Why It Is Used |
-| --- | --- |
-| `tabs` | Save, reopen, focus, and close tabs for workspace flows. |
-| `storage` | Persist local workspace and tool data. |
-| `contextMenus` | Save pages, links, selections, and images from the browser context menu. |
-| `bookmarks` | Import bookmarks into workspaces. |
-| `alarms` | Schedule reminders and subscription alerts. |
-| `notifications` | Show reminder and storage notifications. |
-
-## Development
-
-TabNest is a vanilla Manifest V3 extension. There is no bundler, package manager, or build command required.
+## Project structure
 
 ```text
 tabnest/
@@ -156,7 +112,7 @@ tabnest/
 |-- background.js        # Service worker for menus, alarms, notifications, saves
 |-- newtab.html          # Main workspace shell
 |-- newtab.css           # Themes, layout, components, tools, responsive styling
-|-- newtab.js            # Main app state, rendering, search, tools
+|-- newtab.js            # App state, rendering, search, import/export, tools
 |-- popup.html           # Toolbar popup shell
 |-- popup.css            # Popup styling
 |-- popup.js             # Quick-save and popup tab-list behavior
@@ -169,7 +125,11 @@ tabnest/
 `-- .github/workflows/   # CI validation
 ```
 
-Run the same checks used by CI:
+## Development
+
+TabNest has no package install and no build command.
+
+Run the validation checks used by CI:
 
 ```powershell
 node --check newtab.js
@@ -178,15 +138,61 @@ node --check popup.js
 node --check suspended.js
 node --check emoji-data.js
 node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8'))"
+node -e "const m = JSON.parse(require('fs').readFileSync('manifest.json','utf8')); if (m.manifest_version !== 3) throw new Error('manifest_version must be 3')"
 ```
+
+Manual validation checklist:
+
+- Load the unpacked extension in Chrome or Edge.
+- Open a new tab and confirm the workspace renders.
+- Save the current tab and all open tabs from the popup.
+- Create a note, todo, group, stack, reminder, and archived item.
+- Try board, list, focus, and canvas views.
+- Verify search operators and negative filters.
+- Export data, import it into a clean profile, and review the preview step before restore.
+
+## Deployment
+
+For local testing, load the repository folder as an unpacked extension.
+
+For a packaged release:
+
+1. Run the validation checks.
+2. Confirm `manifest.json` has the intended version.
+3. Zip the extension source files, excluding `.git` and local-only files.
+4. Attach the zip to the GitHub release or submit it through the browser extension store workflow.
+
+The current product release is documented in [RELEASE_NOTES.md](./RELEASE_NOTES.md).
+
+## GitHub topics
+
+`browser-extension` `chrome-extension` `manifest-v3` `tab-manager` `new-tab` `productivity` `workspace` `local-first` `privacy-first` `vanilla-javascript` `notes` `todos` `reminders` `tab-hibernation`
+
+## Privacy
+
+TabNest keeps data local:
+
+- Stored URLs, titles, notes, todos, reminders, workspace state, and tool data live in `chrome.storage.local`.
+- The extension does not request host permissions.
+- The extension does not read page content.
+- Browser permissions are limited to tab workflows, storage, context menus, bookmarks import, alarms, and notifications.
+
+| Permission | Why it is used |
+| --- | --- |
+| `tabs` | Save, reopen, focus, and close tabs for workspace flows. |
+| `storage` | Persist local workspace and tool data. |
+| `contextMenus` | Save pages, links, selections, and images from the browser context menu. |
+| `bookmarks` | Import bookmarks into workspaces. |
+| `alarms` | Schedule reminders and subscription alerts. |
+| `notifications` | Show reminder and storage notifications. |
 
 ## Roadmap
 
-- Capture polished product screenshots for the README and browser-store listing.
+- Add polished product screenshots for the README and browser-store listing.
 - Add UI smoke tests for critical save, search, move, and restore flows.
-- Expand import/export migration coverage.
+- Expand migration coverage for import/export.
+- Improve keyboard workflows, accessibility, and high-contrast support.
 - Explore optional encrypted sync while preserving local-first defaults.
-- Continue improving keyboard workflows, accessibility, and high-contrast support.
 
 ## License
 
