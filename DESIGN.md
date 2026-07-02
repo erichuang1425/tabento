@@ -99,12 +99,13 @@ organizing, used as the UI's signature motif.
 
 ### Borrowed *ideas* (functional, safe) worth pursuing next
 - From Refern: the **Canvas** view (we already have one) and a future **relationship/graph**
-  view; ~~tag-based + **color search**~~ → **color search shipped** (`color:red` operator
+  view; ~~tag-based~~ **tag search shipped** (`tag:` operator, backed by per-item `item.tags` from
+  the detail pane) alongside ~~**color search**~~ → **color search shipped** (`color:red` operator
   in the search bar). Refern's "14 search operators" trait → **search operators expanded**:
   `type:tab|note|todo|stack` (by kind), `is:done` / `is:open` (todo state),
-  `domain:`/`site:` + `url:` (tab hostname / URL substring), and `in:` (scope by the name of
-  a containing group/stack) now join `color:`, and any operator or word can be **negated**
-  with a leading `-` to exclude matches. They combine freely (e.g.
+  `domain:`/`site:` + `url:` (tab hostname / URL substring), `in:` (scope by the name of
+  a containing group/stack), and `tag:` (by user-assigned tag) now join `color:`, and any operator
+  or word can be **negated** with a leading `-` to exclude matches. They combine freely (e.g.
   `type:tab in:work domain:github.com "pull request" -is:done`). All derived from local
   item metadata / structure — no host access. Note: **link previews / thumbnails** would require reading
   page content, which conflicts with our no-host-permissions / private-by-default positioning
@@ -192,3 +193,16 @@ differentiator we can market honestly.
   storage keys (`te`, `te_settings_mirror`) left unchanged for data continuity; import still
   accepts old `tabnest`/`tabextend` envelopes. The name was conflict-checked against the Chrome
   Web Store and app space (unlike "TabPro", which collides with existing extensions).
+- **2026-07-02** — Shipped **Phase 2 — Link content** ([IMPROVEMENTS §4.2](docs/IMPROVEMENTS.md)):
+  a right-docked, non-blocking **item detail pane** (`renderItemDetail`) that hangs optional,
+  migration-safe metadata off any item — a rich-text annotation (`item.notes`, reusing the
+  `.note-text` RT toolbar), **tags** (`item.tags`), **custom fields** (`item.customFields`),
+  a **checklist** (`item.checklist`), and a user-picked **cover** (`item.cover` = `{color}`|`{emoji}`,
+  never a scraped page image — keeps the no-host-permissions line) — plus inline reminder editing
+  through the existing `setReminder`/`clearReminder` path. The pane is a **route** (board `?item=<id>`,
+  group-page `…/group/<id>/item/<id>`), so it deep-links and survives reload/back-forward, and closes
+  as the topmost Escape surface. Tags feed a new **`tag:`** search operator (comma-lists OR, `-tag:`
+  negation, substring match) exposed as `data-tags` on cards — the seventh operator toward Refern's
+  "14", still purely local. Covers, tag chips, and a "has detail" hint surface on the cards; every
+  item type gains a **Details…** context action and tabs get a details button. All behind **schema 5**
+  (absent fields = today's behavior; older exports import unchanged).

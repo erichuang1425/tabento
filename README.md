@@ -51,8 +51,9 @@ Tabento keeps that context in the new tab page:
 | --- | --- |
 | Workspaces | Create multiple workspaces, bind them to browser windows, switch categories, focus a group, archive context, and undo or redo changes. |
 | Saved items | Store tabs, notes, todos, stacks inside stacks, color labels, reminders, and selected batches of cards. |
+| Link details | Open any item's detail pane (details button or right-click → Details…) to add a rich-text annotation, tags, custom fields, a checklist, and a color/emoji cover — every field optional, deep-linkable, and reload-safe. |
 | Views | Move between board, list, focused group, and free-positioned canvas layouts depending on the kind of work. |
-| Search | Combine text search with `type:`, `color:`, `domain:`, `site:`, `url:`, `in:`, `is:`, `has:reminder`, and `reminder:` operators. Prefix terms with `-` to exclude matches. |
+| Search | Combine text search with `type:`, `color:`, `domain:`, `site:`, `url:`, `in:`, `tag:`, `is:`, `has:reminder`, and `reminder:` operators. Prefix terms with `-` to exclude matches. |
 | Hibernation | Open saved tabs through `suspended.html` and load the destination only when you activate it. |
 | Popup | Save the current tab, save every open tab, and inspect open tabs from the extension action. |
 | Tools | Use built-in Pomodoro, finance diary, subscriptions, habits, hydration, reading, goals, and workout trackers. |
@@ -104,6 +105,7 @@ After editing extension files, reload Tabento from the browser extensions page.
 color:red,blue type:todo -is:done
 site:github.com url:/issues in:research
 has:reminder reminder:overdue
+tag:rust,reading -tag:archived
 ```
 
 ## Project structure
