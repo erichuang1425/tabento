@@ -5,7 +5,7 @@
 // Schema version of the in-storage state. Bump when state shape changes,
 // then add a forward-migration branch in migrate(). Older builds reading
 // data stamped with a higher value get a blocking "newer data" guard.
-const CURRENT_SCHEMA = 4;
+const CURRENT_SCHEMA = 5;
 
 // ════════════════════════════════════════════════════════════════
 // STATE + UNDO
@@ -204,6 +204,16 @@ function findItem(itemId) {
 // registry), so any mutation that re-renders keeps the group page showing.
 let activeGroupPage = null;
 
+// The item whose detail pane (§4.2) is open on the *board* surface, mirrored
+// into the board route as `?item=<id>` so it survives reload / back-forward.
+// On a group page the open detail item lives in activeGroupPage.itemId instead
+// (that surface owns the `…/group/<id>/item/<id>` path shape); the two never
+// apply at once. currentDetailItemId() resolves whichever is active.
+let boardDetailItemId = null;
+function currentDetailItemId() {
+  return activeGroupPage ? (activeGroupPage.itemId || null) : (boardDetailItemId || null);
+}
+
 const Router = (() => {
   let _ready = false;
 
@@ -257,6 +267,7 @@ const Router = (() => {
     const query = {};
     const mode = getViewMode();
     if (mode && mode !== 'board') query.view = mode;
+    if (boardDetailItemId) query.item = boardDetailItemId;
     return { type: 'board', wsId: ws.id, catId: cat ? cat.id : null, query };
   }
 
@@ -272,6 +283,9 @@ const Router = (() => {
     if (ws && s.activeWsId !== ws.id) { s.activeWsId = ws.id; changed = true; }
 
     if (route.type === 'group') {
+      // A group page owns the item-detail surface via its path, so any board
+      // detail pane is left behind when we enter one.
+      if (boardDetailItemId) { boardDetailItemId = null; changed = true; }
       // Resolve the group (searched globally); select its workspace + category
       // so the board underneath and the breadcrumb stay coherent, then mark the
       // group-page surface active. A stale/deleted id falls back to the board.
@@ -304,6 +318,11 @@ const Router = (() => {
       document.body.dataset.viewMode = wantView;
       changed = true;
     }
+    // Board-surface item detail pane (§4.2): `?item=<id>`. A stale id renders
+    // nothing (renderItemDetail resolves it and closes gracefully), so a dead
+    // deep link never wedges the app.
+    const wantItem = (route.query && route.query.item) || null;
+    if (boardDetailItemId !== wantItem) { boardDetailItemId = wantItem; changed = true; }
     return changed;
   }
 
@@ -455,6 +474,18 @@ function migrate() {
     // items are intentionally left un-stamped: we have no real creation time
     // for them, so consumers fall back to array order (see collectReminders /
     // the timeline renderer). Purely additive; nothing to rewrite here.
+  }
+
+  if (from < 5) {
+    // Schema 5 (§4.2 — Link content) adds optional per-item detail fields:
+    //   item.notes       rich HTML annotation ("why I saved this")
+    //   item.tags        string[] — feeds the tag: search operator
+    //   item.customFields[{ label, value }] — arbitrary key/values
+    //   item.checklist   [{ text, done }] — a mini sub-todo list on any item
+    //   item.cover       { color } | { emoji } — a user-picked tile look
+    // Every field is absent by default (absent = today's behavior), so there is
+    // nothing to rewrite: bare links stay valid and older exports import
+    // unchanged. Purely additive.
   }
 
   s.schema = CURRENT_SCHEMA;
@@ -991,6 +1022,7 @@ async function setReminder(itemId, ts) {
   try { await chrome.alarms.create('te-reminder-' + itemId, { when: ts }); } catch {}
   State.persist();
   renderBoard();
+  refreshDetailPane();
   toast('Reminder set');
 }
 async function clearReminder(itemId) {
@@ -1001,6 +1033,7 @@ async function clearReminder(itemId) {
   try { await chrome.alarms.clear('te-reminder-' + itemId); } catch {}
   State.persist();
   renderBoard();
+  refreshDetailPane();
   toast('Reminder cleared');
 }
 
@@ -1266,6 +1299,7 @@ const cmIcons = {
   clock: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 3v3l2 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
   stack: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3l4-2 4 2-4 2-4-2zM2 6l4 2 4-2M2 9l4 2 4-2" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',
   move: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8M4 4l-2 2 2 2M8 4l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  detail: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 1.5v9M3.2 4h2.2M3.2 6h2.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>',
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -1827,7 +1861,7 @@ async function saveAllTabs() {
 // ════════════════════════════════════════════════════════════════
 // RENDER (diff-based for items)
 // ════════════════════════════════════════════════════════════════
-function renderAll() { renderHeader(); renderWsList(); renderCategoryTabs(); renderBoard(); Router.sync(); }
+function renderAll() { renderHeader(); renderWsList(); renderCategoryTabs(); renderBoard(); renderItemDetail(); Router.sync(); }
 
 async function renderHeader() {
   const ws = activeWs(); if (!ws) return;
@@ -2416,6 +2450,7 @@ function buildItem(it, parentItems, group) {
 
 function commonActs(it, extra = []) {
   const acts = [
+    { text:'Details…', icon: cmIcons.detail, action: () => openItemDetail(it.id) },
     { text:'Edit color', icon: cmIcons.color, action: () => showColorMenu(null, it) },
     { text:'Set reminder…', icon: cmIcons.clock, action: () => openReminderPicker(it.id) },
     ...(it.reminder ? [{ text:'Clear reminder', icon: cmIcons.clock, action: () => clearReminder(it.id) }] : []),
@@ -2481,6 +2516,54 @@ function selectRangeTo(itemId) {
   renderItemSelToolbar();
 }
 
+// Decorate a freshly-built item card with the §4.2 metadata: expose tags to the
+// tag: search operator (dataset.tags), paint an optional cover chip, surface tag
+// chips, and flag cards that carry hidden detail so the board hints at it. Called
+// at the tail of every item builder so all kinds get it uniformly.
+function applyItemMeta(el, it) {
+  const tags = Array.isArray(it.tags) ? it.tags.filter(Boolean) : [];
+  if (tags.length) el.dataset.tags = tags.map(t => String(t).toLowerCase()).join(',');
+
+  // Stacks are containers with their own header-first layout; only expose their
+  // tags to search and skip the card-style cover/chip/meta chrome.
+  if (it.type === 'stack') return;
+
+  if (it.cover) {
+    const cov = document.createElement('div');
+    cov.className = 'item-cover';
+    if (it.cover.emoji) { cov.classList.add('emoji'); cov.textContent = it.cover.emoji; }
+    else if (it.cover.color) { cov.classList.add('color'); cov.style.background = it.cover.color; }
+    el.insertBefore(cov, el.firstChild);
+    el.classList.add('has-cover');
+  }
+
+  if (tags.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'item-tags';
+    tags.slice(0, 4).forEach(t => { const c = document.createElement('span'); c.className = 'item-tag'; c.textContent = t; wrap.appendChild(c); });
+    if (tags.length > 4) { const m = document.createElement('span'); m.className = 'item-tag more'; m.textContent = '+' + (tags.length - 4); wrap.appendChild(m); }
+    el.appendChild(wrap);
+  }
+
+  const checked = Array.isArray(it.checklist) ? it.checklist.filter(x => x.done).length : 0;
+  const total = Array.isArray(it.checklist) ? it.checklist.length : 0;
+  const hasNotes = !!(it.notes && it.notes.replace(/<[^>]*>/g, '').trim());
+  const hasFields = Array.isArray(it.customFields) && it.customFields.length > 0;
+  if (hasNotes || total || hasFields) {
+    el.classList.add('has-detail');
+    const meta = document.createElement('div');
+    meta.className = 'item-detail-meta';
+    const bits = [];
+    if (hasNotes) bits.push('<span class="idm-note" title="Has notes">✎</span>');
+    if (total) bits.push(`<span class="idm-check" title="Checklist">☑ ${checked}/${total}</span>`);
+    if (hasFields) bits.push(`<span class="idm-fields" title="Custom fields">⋯ ${it.customFields.length}</span>`);
+    meta.innerHTML = bits.join('');
+    meta.title = 'Open details';
+    meta.addEventListener('click', e => { e.stopPropagation(); openItemDetail(it.id); });
+    el.appendChild(meta);
+  }
+}
+
 function buildTab(it, parentItems, group) {
   const el = document.createElement('div');
   el.className = 'item tab';
@@ -2503,6 +2586,9 @@ function buildTab(it, parentItems, group) {
       <img class="item-fav" src="${esc(fav)}" alt="" loading="lazy" decoding="async" onerror="this.src='${BLANK_FAV}'">
       <span class="item-title">${esc(it.title)}</span>
       <div class="item-acts">
+        <button class="item-btn" data-act="detail" title="Details">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 1.5v9M3.2 4h2.2M3.2 6h2.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+        </button>
         <button class="item-btn" data-act="open" title="Open in new tab">
           <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M4 2.5H2a1 1 0 00-1 1v6.5A1 1 0 002 11h6.5a1 1 0 001-1V8M7 1h4m0 0v4M11 1L5.5 6.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
@@ -2519,6 +2605,7 @@ function buildTab(it, parentItems, group) {
       e.stopPropagation();
       const act = b.dataset.act;
       if (act === 'open') openTabMaybeHibernated(it.url);
+      else if (act === 'detail') openItemDetail(it.id);
       else if (act === 'del') archiveItem(it.id);
     });
   });
@@ -2532,6 +2619,7 @@ function buildTab(it, parentItems, group) {
       ...commonActs(it)
     ]);
   });
+  applyItemMeta(el, it);
   attachItemDrag(el, it, parentItems, group);
   return el;
 }
@@ -2600,6 +2688,7 @@ function buildNote(it, parentItems, group) {
       ...commonActs(it)
     ]);
   });
+  applyItemMeta(el, it);
   attachItemDrag(el, it, parentItems, group);
   return el;
 }
@@ -2651,6 +2740,7 @@ function buildTodo(it, parentItems, group) {
       ...commonActs(it)
     ]);
   });
+  applyItemMeta(el, it);
   attachItemDrag(el, it, parentItems, group);
   return el;
 }
@@ -2761,6 +2851,7 @@ function buildStack(it, parentItems, group) {
     }
   });
 
+  applyItemMeta(el, it);
   attachItemDrag(el, it, parentItems, group);
   return el;
 }
@@ -3284,8 +3375,8 @@ function applySearchFilter() {
   // appear as a substring; a quoted phrase is one needle so its spaces match verbatim.
   // Each token routes into a positive (must-match, AND across families) or a negative
   // (must-NOT-match, hide if ANY negative family matches) bucket with identical shape.
-  const pos = { color: [], type: [], state: [], domain: [], url: [], in: [], text: [] };
-  const neg = { color: [], type: [], state: [], domain: [], url: [], in: [], text: [] };
+  const pos = { color: [], type: [], state: [], domain: [], url: [], in: [], tag: [], text: [] };
+  const neg = { color: [], type: [], state: [], domain: [], url: [], in: [], tag: [], text: [] };
   (raw.match(/-?"[^"]*"|\S+/g) || []).forEach(tok => {
     // A leading '-' negates the rest of the token (operator or word). A bare "-" with
     // nothing after it is treated as literal text.
@@ -3312,22 +3403,25 @@ function applySearchFilter() {
       m[1].split(',').forEach(u => { const v = u.trim(); if (v) bucket.url.push(v); });
     } else if ((m = /^in:(.+)$/.exec(tok))) {
       m[1].split(',').forEach(g => { const v = g.trim(); if (v) bucket.in.push(v); });
+    } else if ((m = /^tag:(.+)$/.exec(tok))) {
+      m[1].split(',').forEach(t => { const v = t.trim(); if (v) bucket.tag.push(v); });
     } else {
       bucket.text.push(tok);
     }
   });
   // Positive filters keep their original names so the match logic below is unchanged.
   const colorFilters = pos.color, typeFilters = pos.type, stateFilters = pos.state,
-        domainFilters = pos.domain, urlFilters = pos.url, inFilters = pos.in, textNeedles = pos.text;
+        domainFilters = pos.domain, urlFilters = pos.url, inFilters = pos.in, tagFilters = pos.tag, textNeedles = pos.text;
   const hasColor = colorFilters.length > 0;
   const hasType = typeFilters.length > 0;
   const hasState = stateFilters.length > 0;
   const hasDomain = domainFilters.length > 0;
   const hasUrl = urlFilters.length > 0;
   const hasIn = inFilters.length > 0;
+  const hasTag = tagFilters.length > 0;
   const hasText = textNeedles.length > 0;
   const hasNeg = neg.color.length || neg.type.length || neg.state.length ||
-                 neg.domain.length || neg.url.length || neg.in.length || neg.text.length;
+                 neg.domain.length || neg.url.length || neg.in.length || neg.tag.length || neg.text.length;
   // Names of every group/stack a node is nested inside (board + list structures),
   // lowercased — powers the in:<name> scope operator. Walks ancestors only (a node isn't
   // "in" itself): board group names live in .gcol-name, board stack names in .stack-name,
@@ -3344,6 +3438,11 @@ function applySearchFilter() {
     return names;
   };
   const matchIn = (filters, node) => { const ns = containerNamesOf(node); return filters.some(f => ns.some(n => n.includes(f))); };
+  // Tags are exposed on each node as a comma-joined, lowercased dataset.tags blob
+  // (see the item builders). tag:<x> matches when any of the node's tags contains
+  // <x> as a substring — same substring semantics as in:/domain:.
+  const tagsOf = node => (node.dataset.tags ? node.dataset.tags.split(',').filter(Boolean) : []);
+  const matchTag = (filters, node) => { const ts = tagsOf(node); return filters.some(f => ts.some(t => t.includes(f))); };
   // Lowercased text to match an element against. For a board/canvas stack, use ONLY its own
   // header/name — not descendant cards, which surface on their own as .item matches and
   // reveal their parent. This keeps results consistent with list view (which evaluates
@@ -3374,6 +3473,7 @@ function applySearchFilter() {
     (neg.domain.length && !!el.dataset.host && neg.domain.some(d => el.dataset.host.includes(d))) ||
     (neg.url.length && !!el.dataset.url && neg.url.some(u => el.dataset.url.includes(u))) ||
     (neg.in.length && matchIn(neg.in, el)) ||
+    (neg.tag.length && matchTag(neg.tag, el)) ||
     (neg.text.length && (t => neg.text.some(n => t.includes(n)))(elemText(el)))
   );
   // A list-view stack header is EXCLUDED similarly. A stack has no completion state, host,
@@ -3382,6 +3482,7 @@ function applySearchFilter() {
     (neg.color.length && neg.color.includes(st.dataset.color)) ||
     (neg.type.length && neg.type.includes('stack')) ||
     (neg.in.length && matchIn(neg.in, st)) ||
+    (neg.tag.length && matchTag(neg.tag, st)) ||
     (neg.text.length && (t => neg.text.some(n => t.includes(n)))(elemText(hd)))
   );
   getItemNodes().forEach(el => {
@@ -3399,6 +3500,7 @@ function applySearchFilter() {
     if (match && hasDomain) { const h = el.dataset.host || ''; match = !!h && domainFilters.some(d => h.includes(d)); }
     if (match && hasUrl) { const u = el.dataset.url || ''; match = !!u && urlFilters.some(f => u.includes(f)); }
     if (match && hasIn) match = matchIn(inFilters, el);
+    if (match && hasTag) match = matchTag(tagFilters, el);
     if (match && hasText) match = matchText(el);
     if (match && hasNeg) match = !excludedItem(el);
     el.classList.toggle('hidden', !match);
@@ -3417,6 +3519,7 @@ function applySearchFilter() {
     if (match && hasState) match = false; // a stack has no completion state
     if (match && (hasDomain || hasUrl)) match = false; // a stack has no URL
     if (match && hasIn) match = matchIn(inFilters, st); // scope by the stack's ancestor groups/stacks
+    if (match && hasTag) match = matchTag(tagFilters, st);
     if (match && hasText) match = matchText(hd);
     if (match && hasNeg) match = !excludedStack(st, hd);
     hd.classList.toggle('hidden', !match);
@@ -3455,8 +3558,8 @@ function applySearchFilter() {
   // heterogeneous archive entries); negative TEXT needles, though, just exclude matching
   // entries, so they're passed through to filter the archive result list.
   const hasNegOps = neg.color.length || neg.type.length || neg.state.length ||
-                    neg.domain.length || neg.url.length || neg.in.length;
-  const hasOps = hasColor || hasType || hasState || hasDomain || hasUrl || hasIn || hasNegOps;
+                    neg.domain.length || neg.url.length || neg.in.length || neg.tag.length;
+  const hasOps = hasColor || hasType || hasState || hasDomain || hasUrl || hasIn || hasTag || hasNegOps;
   renderArchiveSearchResults(hasText && !hasOps ? textNeedles : null, neg.text);
 }
 // Build a normalized search blob for an archive entry (group or item).
@@ -4367,6 +4470,39 @@ function closeGroupPage() {
   Router.navigate({ type: 'board', wsId: ws ? ws.id : null, catId: cat ? cat.id : null, query: {} });
 }
 
+// Open the per-item detail pane (§4.2). On a group page the open item lives in
+// the group route (`…/group/<gid>/item/<id>`); on the board it rides the board
+// route as `?item=<id>`. Both are deep-linkable and survive reload because the
+// selection is reflected into the URL by Router.sync.
+function openItemDetail(id) {
+  if (!findItem(id)) return;
+  if (activeGroupPage) {
+    Router.navigate({ type: 'group', wsId: State.get().activeWsId, groupId: activeGroupPage.groupId, itemId: id, query: {} });
+  } else {
+    const ws = activeWs(); if (!ws) return;
+    const cat = activeCat();
+    const query = {};
+    const mode = getViewMode();
+    if (mode && mode !== 'board') query.view = mode;
+    query.item = id;
+    Router.navigate({ type: 'board', wsId: ws.id, catId: cat ? cat.id : null, query });
+  }
+}
+// Close the detail pane, staying on whatever surface (board or group page) it
+// was docked over. A route change so back/forward and the URL stay consistent.
+function closeItemDetail() {
+  if (activeGroupPage) {
+    Router.navigate({ type: 'group', wsId: State.get().activeWsId, groupId: activeGroupPage.groupId, itemId: null, query: {} });
+  } else {
+    const ws = activeWs();
+    const cat = activeCat();
+    const query = {};
+    const mode = getViewMode();
+    if (mode && mode !== 'board') query.view = mode;
+    Router.navigate({ type: 'board', wsId: ws ? ws.id : null, catId: cat ? cat.id : null, query });
+  }
+}
+
 function hideBreadcrumb() {
   const bar = document.getElementById('breadcrumb-bar');
   if (bar && !bar.classList.contains('hidden')) { bar.classList.add('hidden'); bar.innerHTML = ''; }
@@ -4462,6 +4598,254 @@ function renderGroupPage() {
   applySearchFilter();
   return true;
 }
+
+// ════════════════════════════════════════════════════════════════
+// ITEM DETAIL PANE (§4.2 — per-link content)
+// ════════════════════════════════════════════════════════════════
+// A right-docked, non-blocking panel that hangs the additive item metadata off
+// any item: a rich-text annotation (notes), tags, custom fields, a checklist, a
+// cover, and inline reminder editing. It's addressable via the route (board
+// `?item=<id>` or group-page `…/item/<id>`) so it deep-links and survives
+// reload. renderAll() paints it; card edits keep the board in sync.
+const DETAIL_COVER_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#6366f1', '#a855f7', '#ec4899'];
+// Normalize a typed tag: trimmed, single-spaced, comma-free (commas delimit the
+// dataset.tags blob the tag: operator reads), lowercased for case-insensitive
+// matching.
+const normalizeTag = s => String(s || '').trim().replace(/\s+/g, ' ').replace(/,/g, '').toLowerCase();
+
+// The editable "primary" field(s) per item kind — the one thing the pane lets
+// you rename in place; the note body itself is still edited on the card.
+function detailPrimaryEditor(it, commit) {
+  const wrap = document.createElement('div');
+  wrap.className = 'idp-primary';
+  if (it.type === 'note') {
+    wrap.innerHTML = `<div class="idp-note-preview">${sanitizeHtml(it.html || '') || '<span class="idp-muted">Empty note — edit it on the board</span>'}</div>`;
+    return wrap;
+  }
+  const mk = (cls, val, ph) => { const i = document.createElement('input'); i.className = cls; i.value = val || ''; i.placeholder = ph; i.spellcheck = false; return i; };
+  if (it.type === 'tab') {
+    const t = mk('idp-title-input', it.title, 'Title');
+    const u = mk('idp-url-input', it.url, 'https://…');
+    t.addEventListener('change', () => { if (t.value !== it.title) commit('Edit title', () => { it.title = t.value; }, { pane: false }); });
+    u.addEventListener('change', () => { if (u.value !== it.url) commit('Edit URL', () => { it.url = u.value; }, { pane: false }); });
+    wrap.appendChild(t); wrap.appendChild(u);
+    return wrap;
+  }
+  if (it.type === 'todo') {
+    const row = document.createElement('div'); row.className = 'idp-todo-row';
+    const chk = document.createElement('button'); chk.type = 'button'; chk.className = 'idp-todo-check' + (it.done ? ' done' : ''); chk.setAttribute('aria-label', 'Toggle done');
+    chk.onclick = () => commit(it.done ? 'Mark not done' : 'Mark done', () => { it.done = !it.done; });
+    const t = mk('idp-title-input', it.text, 'Task');
+    t.addEventListener('change', () => { if (t.value !== it.text) commit('Edit todo', () => { it.text = t.value; }, { pane: false }); });
+    row.appendChild(chk); row.appendChild(t); wrap.appendChild(row);
+    return wrap;
+  }
+  // stack
+  const t = mk('idp-title-input', it.name, 'Stack name');
+  t.addEventListener('change', () => { if (t.value !== it.name) commit('Rename stack', () => { it.name = t.value; }, { pane: false }); });
+  wrap.appendChild(t);
+  return wrap;
+}
+
+// Re-render just the detail pane (used by paths that mutate an item's reminder
+// through the shared setReminder/clearReminder flow, which only calls renderBoard).
+function refreshDetailPane() { renderItemDetail(); }
+
+function renderItemDetail() {
+  let root = document.getElementById('item-detail');
+  const id = currentDetailItemId();
+  const info = id ? findItem(id) : null;
+
+  // Nothing open, or a stale/deleted id in the URL → tear the pane down and drop
+  // the dead id so Router.sync() normalizes the address bar on the next tick.
+  if (!info) {
+    if (root) { root.classList.remove('open'); root.innerHTML = ''; delete root.dataset.itemId; }
+    document.body.classList.remove('detail-open');
+    if (id) { if (activeGroupPage) activeGroupPage.itemId = null; else boardDetailItemId = null; }
+    return;
+  }
+  const it = info.item;
+
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'item-detail';
+    document.body.appendChild(root);
+  }
+  root.dataset.itemId = id;
+  root.classList.add('open');
+  document.body.classList.add('detail-open');
+
+  // Snapshot → mutate → persist → refresh card, and (unless suppressed) rebuild
+  // the pane. Text fields commit on blur/change and pass { pane:false } so the
+  // caret isn't yanked mid-edit; structural clicks rebuild the pane.
+  const commit = (label, fn, opts = {}) => {
+    State.snapshot(label);
+    fn();
+    State.persist();
+    renderBoard();
+    if (opts.pane !== false) renderItemDetail();
+  };
+
+  root.innerHTML = `
+    <div class="idp-scrim"></div>
+    <aside class="idp-panel" role="dialog" aria-label="Item details" aria-modal="false">
+      <header class="idp-hd">
+        <span class="idp-type idp-type-${it.type}">${esc(it.type)}</span>
+        <div class="idp-hd-sp"></div>
+        <button class="idp-close" type="button" title="Close (Esc)" aria-label="Close details">
+          <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="idp-body"></div>
+    </aside>`;
+  root.querySelector('.idp-scrim').onclick = closeItemDetail;
+  root.querySelector('.idp-close').onclick = closeItemDetail;
+  const body = root.querySelector('.idp-body');
+
+  const section = (title) => {
+    const s = document.createElement('section');
+    s.className = 'idp-sec';
+    if (title) { const h = document.createElement('div'); h.className = 'idp-sec-t'; h.textContent = title; s.appendChild(h); }
+    body.appendChild(s);
+    return s;
+  };
+
+  // ── Primary editor ───────────────────────────────────────────────
+  section().appendChild(detailPrimaryEditor(it, commit));
+
+  // ── Cover ────────────────────────────────────────────────────────
+  const cov = section('Cover');
+  const covRow = document.createElement('div'); covRow.className = 'idp-cover-row';
+  DETAIL_COVER_COLORS.forEach(c => {
+    const b = document.createElement('button'); b.type = 'button';
+    b.className = 'idp-swatch' + (it.cover && it.cover.color === c ? ' sel' : '');
+    b.style.background = c; b.title = c;
+    b.onclick = () => commit('Set cover', () => { it.cover = { color: c }; });
+    covRow.appendChild(b);
+  });
+  const emo = document.createElement('input'); emo.className = 'idp-cover-emoji'; emo.maxLength = 2; emo.placeholder = '😀';
+  emo.value = (it.cover && it.cover.emoji) || '';
+  emo.addEventListener('change', () => { const v = emo.value.trim(); commit('Set cover', () => { if (v) it.cover = { emoji: v }; else delete it.cover; }); });
+  covRow.appendChild(emo);
+  const clr = document.createElement('button'); clr.type = 'button'; clr.className = 'idp-cover-clear'; clr.textContent = 'Clear';
+  clr.onclick = () => commit('Clear cover', () => { delete it.cover; });
+  covRow.appendChild(clr);
+  cov.appendChild(covRow);
+
+  // ── Reminder ─────────────────────────────────────────────────────
+  const rem = section('Reminder');
+  const remWrap = document.createElement('div'); remWrap.className = 'idp-rem';
+  if (it.reminder && it.reminder.at) {
+    const past = it.reminder.at < Date.now();
+    const when = document.createElement('span');
+    when.className = 'idp-rem-when' + (past ? ' past' : '');
+    when.textContent = `${new Date(it.reminder.at).toLocaleString()} · ${fmtTimeRelative(it.reminder.at)}`;
+    remWrap.appendChild(when);
+    const change = document.createElement('button'); change.type = 'button'; change.className = 'idp-btn'; change.textContent = 'Change'; change.onclick = () => openReminderPicker(it.id);
+    const clr2 = document.createElement('button'); clr2.type = 'button'; clr2.className = 'idp-btn danger'; clr2.textContent = 'Clear'; clr2.onclick = () => clearReminder(it.id);
+    remWrap.appendChild(change); remWrap.appendChild(clr2);
+  } else {
+    const set = document.createElement('button'); set.type = 'button'; set.className = 'idp-btn'; set.textContent = 'Set reminder…'; set.onclick = () => openReminderPicker(it.id);
+    remWrap.appendChild(set);
+  }
+  rem.appendChild(remWrap);
+
+  // ── Notes annotation (rich text, reuses the .note-text RT toolbar) ─
+  const nsec = section('Notes');
+  const ned = document.createElement('div');
+  ned.className = 'idp-notes note-text';
+  ned.contentEditable = 'true'; ned.spellcheck = false;
+  ned.setAttribute('data-ph', 'Why did you save this? Context, quotes, next steps…');
+  ned.innerHTML = sanitizeHtml(it.notes || '');
+  ned.addEventListener('blur', () => {
+    const html = sanitizeHtml(ned.innerHTML);
+    if (html !== (it.notes || '')) commit('Edit notes', () => { it.notes = autoLinkify(html); }, { pane: false });
+  });
+  ned.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.stopPropagation(); ned.blur(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') { e.preventDefault(); document.execCommand('bold'); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') { e.preventDefault(); document.execCommand('italic'); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') { e.preventDefault(); document.execCommand('underline'); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); rtCreateLink(); }
+  });
+  nsec.appendChild(ned);
+
+  // ── Tags (feed the tag: search operator) ──────────────────────────
+  const tsec = section('Tags');
+  const chips = document.createElement('div'); chips.className = 'idp-tags';
+  (it.tags || []).forEach((tg, i) => {
+    const c = document.createElement('span'); c.className = 'idp-tag';
+    c.innerHTML = `<span>${esc(tg)}</span>`;
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'idp-tag-x'; x.setAttribute('aria-label', 'Remove tag'); x.textContent = '×';
+    x.onclick = () => commit('Remove tag', () => { it.tags.splice(i, 1); if (!it.tags.length) delete it.tags; });
+    c.appendChild(x); chips.appendChild(c);
+  });
+  const tin = document.createElement('input'); tin.id = 'idp-tag-input'; tin.className = 'idp-tag-input'; tin.placeholder = 'Add tag…'; tin.spellcheck = false;
+  tin.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const v = normalizeTag(tin.value);
+      tin.value = '';
+      if (!v || (it.tags || []).includes(v)) return;
+      commit('Add tag', () => { (it.tags = it.tags || []).push(v); });
+      setTimeout(() => document.getElementById('idp-tag-input')?.focus(), 0);
+    } else if (e.key === 'Escape') { e.stopPropagation(); tin.blur(); }
+  });
+  chips.appendChild(tin);
+  tsec.appendChild(chips);
+
+  // ── Checklist (mini sub-todos on any item) ────────────────────────
+  const csec = section('Checklist');
+  const list = it.checklist || [];
+  if (list.length) {
+    const cnt = document.createElement('span'); cnt.className = 'idp-sec-count';
+    cnt.textContent = `${list.filter(x => x.done).length}/${list.length}`;
+    csec.querySelector('.idp-sec-t').appendChild(cnt);
+  }
+  const cl = document.createElement('div'); cl.className = 'idp-checklist';
+  list.forEach((row, i) => {
+    const r = document.createElement('div'); r.className = 'idp-cl-row' + (row.done ? ' done' : '');
+    const chk = document.createElement('button'); chk.type = 'button'; chk.className = 'idp-cl-check' + (row.done ? ' done' : ''); chk.setAttribute('aria-label', 'Toggle');
+    chk.onclick = () => commit('Toggle checklist item', () => { row.done = !row.done; });
+    const tx = document.createElement('input'); tx.className = 'idp-cl-text'; tx.value = row.text || ''; tx.placeholder = 'Item';
+    tx.addEventListener('change', () => { if (tx.value !== row.text) commit('Edit checklist item', () => { row.text = tx.value; }, { pane: false }); });
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'idp-cl-x'; x.setAttribute('aria-label', 'Remove'); x.textContent = '×';
+    x.onclick = () => commit('Remove checklist item', () => { list.splice(i, 1); if (!list.length) delete it.checklist; });
+    r.appendChild(chk); r.appendChild(tx); r.appendChild(x); cl.appendChild(r);
+  });
+  const addIn = document.createElement('input'); addIn.id = 'idp-cl-input'; addIn.className = 'idp-cl-add'; addIn.placeholder = 'Add checklist item…';
+  addIn.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const v = addIn.value.trim(); addIn.value = '';
+      if (!v) return;
+      commit('Add checklist item', () => { (it.checklist = it.checklist || []).push({ text: v, done: false }); });
+      setTimeout(() => document.getElementById('idp-cl-input')?.focus(), 0);
+    } else if (e.key === 'Escape') { e.stopPropagation(); addIn.blur(); }
+  });
+  cl.appendChild(addIn);
+  csec.appendChild(cl);
+
+  // ── Custom fields (arbitrary label/value pairs) ───────────────────
+  const fsec = section('Custom fields');
+  const cfList = it.customFields || [];
+  const cf = document.createElement('div'); cf.className = 'idp-fields';
+  cfList.forEach((row, i) => {
+    const r = document.createElement('div'); r.className = 'idp-cf-row';
+    const l = document.createElement('input'); l.className = 'idp-cf-label'; l.value = row.label || ''; l.placeholder = 'Label';
+    l.addEventListener('change', () => { if (l.value !== row.label) commit('Edit field', () => { row.label = l.value; }, { pane: false }); });
+    const v = document.createElement('input'); v.className = 'idp-cf-value'; v.value = row.value || ''; v.placeholder = 'Value';
+    v.addEventListener('change', () => { if (v.value !== row.value) commit('Edit field', () => { row.value = v.value; }, { pane: false }); });
+    const x = document.createElement('button'); x.type = 'button'; x.className = 'idp-cf-x'; x.setAttribute('aria-label', 'Remove'); x.textContent = '×';
+    x.onclick = () => commit('Remove field', () => { cfList.splice(i, 1); if (!cfList.length) delete it.customFields; });
+    r.appendChild(l); r.appendChild(v); r.appendChild(x); cf.appendChild(r);
+  });
+  const addBtn = document.createElement('button'); addBtn.type = 'button'; addBtn.className = 'idp-add-field'; addBtn.textContent = '+ Add field';
+  addBtn.onclick = () => commit('Add field', () => { (it.customFields = it.customFields || []).push({ label: '', value: '' }); });
+  cf.appendChild(addBtn);
+  fsec.appendChild(cf);
+}
+
 // ════════════════════════════════════════════════════════════════
 // FLOATING TOOL WIDGETS - pop tools out as draggable mini windows
 // ════════════════════════════════════════════════════════════════
@@ -7162,9 +7546,14 @@ function bindStatic() {
       if (_qf && !_qf.classList.contains('hidden')) closeStorageFull();
       const tourEl = document.getElementById('tour-overlay');
       if (tourEl && !tourEl.classList.contains('hidden')) endTour(true);
-      // Leave the group page only when it's the topmost surface and the user
-      // isn't mid-edit (e.g. typing in the description).
-      if (activeGroupPage && !inField && !_overlayWasOpen) closeGroupPage();
+      // The item detail pane sits above the board/group page: Escape pops it
+      // first (when it's the topmost surface and the user isn't mid-edit),
+      // leaving the surface beneath intact; a second Escape then leaves that.
+      if (currentDetailItemId() && !inField && !_overlayWasOpen) {
+        closeItemDetail();
+      } else if (activeGroupPage && !inField && !_overlayWasOpen) {
+        closeGroupPage();
+      }
       if (selectedTabIds.size) { selectedTabIds.clear(); lastClickedTabId = null; updateSelectedBadge(); renderOpenTabs(); }
       // clearItemSelection() resets the selection, the sticky mode, the body
       // class, and the button — so it covers an empty-but-active select mode too.
