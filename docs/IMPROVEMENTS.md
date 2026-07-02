@@ -11,6 +11,15 @@ first-class routed page (`openGroupPage` / `renderGroupPage`) at
 `#/ws/<id>/group/<id>`, with a Workspace › Category › Group breadcrumb, real
 back/forward + reload, and an optional rich-text description (`group.readme`,
 additive). Selecting a category/workspace transparently exits the page.
+Phase 2 (Link content, §4.2) has landed: a right-docked **item detail pane**
+(`renderItemDetail`) hangs additive metadata off any item — a rich-text
+annotation (`item.notes`), `item.tags`, `item.customFields`, an `item.checklist`,
+and a user-picked `item.cover` (color/emoji) — with inline reminder editing. It's
+deep-linkable (`…/group/<id>/item/<id>` on a group page, `?item=<id>` on the
+board) and survives reload. Tags feed a new **`tag:`** search operator (with `-`
+negation), covers/tag-chips/detail hints surface on the cards, and everything is
+behind schema 5 (absent = today's behavior). Opened from a card's details button
+or the "Details…" context-menu action.
 
 This document plans a set of **major** features for Tabento: spatial, animated, design-forward
 interfaces and the systems work needed to make them cohere. Every proposal here is grounded in
