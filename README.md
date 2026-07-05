@@ -1,5 +1,9 @@
 # Folio
 
+<p align="center">
+  <img src="./media/png/icon_with_name.png" alt="Folio" width="420">
+</p>
+
 <p>
   <a href="./manifest.json"><img src="https://img.shields.io/badge/version-v3.1.0-4f46e5?style=flat-square" alt="version v3.1.0"></a>
   <a href="./manifest.json"><img src="https://img.shields.io/badge/Manifest-MV3-0f766e?style=flat-square&logo=googlechrome&logoColor=white" alt="Manifest V3"></a>
@@ -14,19 +18,17 @@ Landing page: [docs/index.html](./docs/index.html), ready for GitHub Pages (Sett
 
 Folio replaces the Chromium new tab page. It helps you save tabs, group them with notes and todos, search them later, and reopen pages without keeping every tab loaded. Data stays in `chrome.storage.local`; the extension has no account system, no server, no host permissions, and no page-content reading.
 
-### Hibernate tabs to save memory
+## Screenshot
 
-Reopen any saved page through a light placeholder that loads the real site only when you click it. A workspace of 50 tabs costs almost nothing until you need them, the browser stays fast, and it works without host permissions or background loading. This is the core trade Folio makes: keep your context without paying for it in RAM.
+![Folio workspace home screen](./docs/images/folio-workspace-screenshot.png)
 
-<p align="center">
-  <img src="./icons/icon128.png" alt="Folio icon" width="120">
-</p>
+Folio's home surface brings saved spaces, open tabs, search, privacy signals, and local storage status into one calm new-tab workspace.
 
 <p align="center">
   <samp>
     <a href="#why-folio">Why</a> |
     <a href="#what-it-does">What it does</a> |
-    <a href="#screenshots">Screenshots</a> |
+    <a href="#screenshot">Screenshot</a> |
     <a href="#install">Install</a> |
     <a href="#development">Development</a> |
     <a href="#roadmap">Roadmap</a>
@@ -34,6 +36,10 @@ Reopen any saved page through a light placeholder that loads the real site only 
 </p>
 
 ---
+
+### Hibernate tabs to save memory
+
+Reopen any saved page through a light placeholder that loads the real site only when you click it. A workspace of 50 tabs costs almost nothing until you need them, the browser stays fast, and it works without host permissions or background loading. This is the core trade Folio makes: keep your context without paying for it in RAM.
 
 ## Why Folio
 
@@ -67,12 +73,6 @@ Example search:
 ```text
 type:tab in:work domain:github.com "pull request" -is:done
 ```
-
-## Screenshots
-
-![Folio workspace board](./docs/images/tabento-workspace-demo.png)
-
-Demo workspace captured from the unpacked Edge extension.
 
 ## Tech stack
 
