@@ -1,8 +1,8 @@
-# Tabento Layout & Differentiation Brief
+# Folio Layout & Differentiation Brief
 
 Status: living document. Last updated: 2026-06-23.
 
-This brief captures the design direction for Tabento's layout refresh and — importantly —
+This brief captures the design direction for Folio's layout refresh and — importantly —
 how we take *inspiration* from **Refern** and **TabExtend** while staying clearly distinct,
 so the product is defensible and independently owned.
 
@@ -31,8 +31,8 @@ A **tab manager / workspace**. Distinctive traits visible in their marketing sho
 - **Kanban columns** of cards that mix tabs + to-dos + notes; yellow sticky-note styling.
 - Tagline "Tab management made easy."
 
-### Where Tabento already sits
-Tabento is functionally close to TabExtend (sidebar + category tabs + kanban columns of mixed
+### Where Folio already sits
+Folio is functionally close to TabExtend (sidebar + category tabs + kanban columns of mixed
 tab/note/todo cards + a free-positioning canvas). That overlap is **fine on the merits** — these
 are generic category patterns — but it means our *visual* identity has to carry the
 differentiation. That is the core of this brief.
@@ -47,7 +47,7 @@ Four buckets matter. Get a real IP attorney before any paid launch; this is our 
 |---|---|---|
 | **Copyright** | Their *code*, icons, illustrations, marketing copy, exact gradients/art. | Independently written (vanilla JS, our own SVG icons). Never copy their CSS, assets, or taglines. |
 | **Trade dress** | The *distinctive, non-functional* total look-and-feel that identifies the source. | Differentiate the signature elements (palette, tab treatment, card styling, motifs). Keep only the *functional* patterns. |
-| **Trademark** | Their names/logos ("Refern", "TabExtend"). | Don't use their names/marks anywhere. "Tab" is descriptive in this category (Toby, Tabby, Workona, Tab Manager all coexist), so "Tabento" is acceptably distinct — but never imitate their wordmark/logo. |
+| **Trademark** | Their names/logos ("Refern", "TabExtend"). | Don't use their names/marks anywhere. "Tab" is descriptive in this category (Toby, Tabby, Workona, Tab Manager all coexist), so "Folio" is acceptably distinct — but never imitate their wordmark/logo. |
 | **Patents** | Specific claimed inventions. | None known to read on basic kanban/canvas/tag UI. Re-check before launch. |
 
 ### The key distinction: functional vs. distinctive
@@ -71,17 +71,17 @@ What we must make our *own* (the non-functional, source-identifying signature):
 
 ---
 
-## 3. Our visual signature: "Bento"
+## 3. Our visual signature: "Folio"
 
 A distinct identity that is neither TabExtend's pastel-light favicon-rail nor Refern's dark
-image gallery. The name Tabento (tab + *bento box*) drives it: a compartmentalized box for
-organizing, used as the UI's signature motif.
+image gallery. The name Folio evokes a curated collection of pages; the mark turns that
+into stacked, folded sheets, and the UI carries the same organized-space idea through
+compartmentalized boards and calm surfaces.
 
-- **Palette:** the default is a warm rice-paper base (`#f3ead7`) with espresso text and a
-  gold/persimmon accent, rather than TabExtend's white or Refern's neutral gallery grey. The
-  accent gradient (`--brand-grad`) replaces TabExtend's flat blue. A "Tabento Dark" lacquer
-  variant (`#17120d` base) ships alongside it, and notes use a warm matcha/cream instead of
-  yellow sticky-notes.
+- **Palette:** the default is a soft blue/violet Folio theme (`#eef1fb` base with
+  `#5566f2` / `#8b5cf6` accents), rather than TabExtend's white or Refern's neutral
+  gallery grey. The accent gradient (`--brand-grad`) replaces TabExtend's flat blue.
+  A deep Folio Dark variant ships alongside it.
 - **Columns as bento compartments:** board columns are framed cells with a thin gradient top
   accent and a faint sheen (`.gcol` + `.gcol-hd::before`), unlike TabExtend's flat kanban
   columns. The treatment is structural CSS, so it holds across every theme.
@@ -92,10 +92,10 @@ organizing, used as the UI's signature motif.
   reads with a single through-line.
 - **Sidebar:** workspaces plus a live open-tabs list, not a favicon bubble rail. Different from
   TabExtend by construction.
-- **Themes stay first-class:** Tabento (rice-paper) is the new default. Tabento Dark, Aurora
-  (the previous default), and the other themes remain, so users who want light/Nord/Dracula keep
-  them. The identity lives in structure (compartment columns, tab divider-tick, accent gradient),
-  not only colors.
+- **Themes stay first-class:** Folio and Folio Dark are the new defaults. Rice Paper,
+  Lacquer, Aurora, and the other themes remain, so users who want warm, light, Nord, or
+  Dracula palettes keep them. The identity lives in structure (compartment columns, tab
+  divider-tick, accent gradient), not only colors.
 
 ### Borrowed *ideas* (functional, safe) worth pursuing next
 - From Refern: the **Canvas** view (we already have one) and ~~a future~~ **relationship/graph
@@ -123,7 +123,7 @@ None of those *ideas* are protectable; our distinct execution is what matters.
 
 The repository license is intentionally narrow: source is available for noncommercial
 research, private study, informal personal experimentation, hobby use, and contributions
-back to Tabento. Commercial use is not permitted in any kind or form unless the copyright
+back to Folio. Commercial use is not permitted in any kind or form unless the copyright
 holder grants a separate written license.
 
 If a separate commercial offering ever exists, it must use separate written terms and must
@@ -184,16 +184,16 @@ differentiator we can market honestly.
   note/todo). Negative structured operators suppress archive results like the positive ones;
   negative *text* needles instead just filter out matching archive entries. Still no host
   access — purely local metadata/structure.
-- **2026-06-30** — Renamed TabNest to Tabento (tab + *bento box*) and replaced Aurora as the
-  default signature with Bento (§3). New default `[data-theme="tabento"]`: a warm rice-paper base
-  with a gold/persimmon `--brand-grad` and matcha/cream notes (not yellow sticky-notes); a
-  `tabento-dark` lacquer variant ships alongside. Added the structural compartment treatment:
+- **2026-06-30** — Renamed TabNest to Folio and replaced Aurora as the default signature
+  with the Folio stacked-page identity (§3). New default `[data-theme="folio"]`: a soft
+  blue/violet base with a matching `folio-dark` variant. The previous rice-paper and
+  lacquer palettes remain selectable as `tabento` and `tabento-dark`. Added the structural compartment treatment:
   framed board columns with a gradient top accent and a faint sheen (`.gcol` / `.gcol-hd::before`)
   plus a thicker category-tab underline, so the identity holds across every theme and pushes
   further from TabExtend's flat-kanban look. Aurora and all prior themes stay selectable. Seed
   category names (Quicklinks/Read later, which echoed TabExtend) changed to Pinned/Later. Internal
   storage keys (`te`, `te_settings_mirror`) left unchanged for data continuity; import still
-  accepts old `tabnest`/`tabextend` envelopes. The name was conflict-checked against the Chrome
+  accepts old `stow`/`tabento`/`tabnest`/`tabextend` envelopes. The name was conflict-checked against the Chrome
   Web Store and app space (unlike "TabPro", which collides with existing extensions).
 - **2026-07-02** — Shipped **Phase 2 — Link content** ([IMPROVEMENTS §4.2](docs/IMPROVEMENTS.md)):
   a right-docked, non-blocking **item detail pane** (`renderItemDetail`) that hangs optional,
@@ -210,7 +210,7 @@ differentiator we can market honestly.
   (absent fields = today's behavior; older exports import unchanged).
 - **2026-07-03** — Reworked **first-run onboarding** ([IMPROVEMENTS §8](docs/IMPROVEMENTS.md)) toward a
   calmer, more intentional feel. The nine-step spotlight wall is now a **three-card welcome** (what
-  Tabento is → save a tab → find your way around); everything else is taught **just-in-time** by a
+  Folio is → save a tab → find your way around); everything else is taught **just-in-time** by a
   small, non-modal **coach-mark** (`coachMark`) that fires at most once per surface — the first layout-menu
   reach and the first calendar open — reusing one reusable element, transform-positioned (composite-only)
   and reduced-motion aware. A structured `settings.onboarding` record (`welcomeSeen`, per-surface

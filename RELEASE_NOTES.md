@@ -2,25 +2,24 @@
 
 ## v3.1.0
 
-- Introduced the official Tabento app mark: a compact 06A bento-grid icon with a dark lacquer tile,
-  gold top tab, rice compartment, and warm persimmon accents.
-- Added theme-matched logo color studies for the existing app themes, including light, dark,
-  Tabento, Aurora, Dracula, Nord, Rose Pine, Tokyo Night, Solarized, Gruvbox, Catppuccin,
-  Sepia, and Mono palettes.
+- Introduced the official Folio app mark: stacked gradient pages in blue, violet, and
+  soft folded-paper highlights.
+- Added a Folio-first visual system while keeping the existing app themes, including light,
+  dark, Rice Paper, Lacquer, Aurora, Dracula, Nord, Rose Pine, Tokyo Night, Solarized,
+  Gruvbox, Catppuccin, Sepia, and Mono palettes.
 - Updated the extension popup header to use the official SVG mark instead of the older inline
   monochrome symbol.
 
-- Renamed the product from TabNest to Tabento. Existing local data and exports are preserved:
-  storage keys are unchanged and old `tabnest`/`tabextend` exports still import.
-- New default Tabento theme: a warm rice-paper "bento box" palette with a gold/persimmon accent.
-  A Tabento Dark lacquer variant and the prior themes (Aurora, Dark, Light, and the rest) stay
-  available.
+- Renamed the product to Folio. Existing local data and exports are preserved: storage keys
+  are unchanged and old `stow`, `tabento`, `tabnest`, and `tabextend` exports still import.
+- New default Folio theme: a soft blue/violet signature palette. Folio Dark and the prior
+  themes (Rice Paper, Lacquer, Aurora, Dark, Light, and the rest) stay available.
 - Board columns restyled as bento "compartments": framed cells with a gradient top accent and a
   faint sheen. Seed categories renamed from Quicklinks/Read later to Pinned/Later.
 
 ## v3.0.0
 
-Tabento is a local-first visual workspace for browser tabs, notes, todos, stacks,
+Folio is a local-first visual workspace for browser tabs, notes, todos, stacks,
 reminders, and lightweight personal tracking.
 
 ### What's Included

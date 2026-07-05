@@ -1,4 +1,4 @@
-/* Tabento popup.js */
+/* Folio popup.js */
 const $ = id => document.getElementById(id);
 const esc = s => !s ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const favUrl = u => { try { return `https://www.google.com/s2/favicons?domain=${new URL(u).hostname}&sz=32`; } catch { return ''; } };
@@ -14,11 +14,16 @@ const appLocale = () => normalizeLanguage(state?.settings?.language || browserLa
 
 // Every surface reads its palette from the shared themes.css, so applying the
 // same [data-theme] the workspace uses keeps the popup on-theme.
-const THEME_IDS = new Set(['tabento','tabento-dark','dark','aurora','light','dracula','nord','rose-pine','tokyo-night','solarized-dark','solarized-light','gruvbox','catppuccin','sepia','mono']);
+const THEME_IDS = new Set(['folio','folio-dark','tabento','tabento-dark','dark','aurora','light','dracula','nord','rose-pine','tokyo-night','solarized-dark','solarized-light','gruvbox','catppuccin','sepia','mono']);
+const THEME_ALIASES = {
+  stow: 'folio',
+  'stow-dark': 'folio-dark'
+};
+const normalizeThemeId = theme => THEME_ALIASES[theme] || theme;
 function applyTheme() {
-  let theme = state?.settings?.theme || 'light';
-  if (theme === 'auto') theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  if (!THEME_IDS.has(theme)) theme = 'light';
+  let theme = normalizeThemeId(state?.settings?.theme || 'folio');
+  if (theme === 'auto') theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'folio-dark' : 'folio';
+  if (!THEME_IDS.has(theme)) theme = 'folio';
   document.documentElement.dataset.theme = theme;
 }
 
@@ -243,8 +248,12 @@ $('qs-all').onclick = async () => {
     const others = all.slice(1);
     for (const t of others) { try { await chrome.tabs.remove(t.id); } catch {} }
   }
-  toast(`Saved ${all.length} tabs`);
-  setTimeout(() => window.close(), 650);
+  const savedN = all.length;
+  const closed = state.settings?.closeTabOnSave !== false && savedN > 1;
+  toast(closed
+    ? `Saved ${savedN} tabs · load when opened`
+    : `Saved ${savedN} ${savedN === 1 ? 'tab' : 'tabs'}`);
+  setTimeout(() => window.close(), 900);
 };
 
 // ═══ Toast ═══

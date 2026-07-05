@@ -1,4 +1,4 @@
-/* ═══ Tabento background.js ═══ */
+/* ═══ Folio background.js ═══ */
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const normalizeLanguage = value => /^zh(?:[-_]|$)/i.test(String(value || '').trim()) ? 'zh-TW' : 'en';
@@ -17,14 +17,14 @@ async function setState(s) {
   try {
     await chrome.storage.local.set({ te: s });
   } catch (err) {
-    console.error('Tabento storage write failed:', err);
+    console.error('Folio storage write failed:', err);
     if (/quota/i.test(String(err?.message || err))) {
       try {
         chrome.notifications.create('te-storage-quota-' + Date.now(), {
           type: 'basic',
           iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-          title: 'Tabento storage full',
-          message: 'A background save failed. Open Tabento to free space.',
+          title: 'Folio storage full',
+          message: 'A background save failed. Open Folio to free space.',
           priority: 2
         });
       } catch {}
@@ -81,8 +81,8 @@ function flash(text = '✓', color = '#22c55e') {
 // upgrade paths). Also re-registering on onStartup is defense-in-depth for
 // rare cases where persisted menu state desyncs from the SW.
 const MENU_ITEMS = [
-  { id: 'te-save-page',      title: '💾 Save page to Tabento',  contexts: ['page'] },
-  { id: 'te-save-link',      title: '🔗 Save link to Tabento',  contexts: ['link'] },
+  { id: 'te-save-page',      title: '💾 Save page to Folio',  contexts: ['page'] },
+  { id: 'te-save-link',      title: '🔗 Save link to Folio',  contexts: ['link'] },
   { id: 'te-save-selection', title: '📝 Save selection as note',  contexts: ['selection'] },
   { id: 'te-save-image',     title: '🖼️ Save image',              contexts: ['image'] },
   { id: 'te-sep',            type: 'separator',                   contexts: ['page'] },
@@ -283,7 +283,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       });
     }
   } catch (err) {
-    console.error('Tabento alarm failed:', alarm.name, err);
+    console.error('Folio alarm failed:', alarm.name, err);
   }
 });
 
@@ -291,7 +291,7 @@ function stripHtml(html) {
   return String(html).replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
-// Click notification → open Tabento. Subscription and storage-quota
+// Click notification → open Folio. Subscription and storage-quota
 // notifications previously did nothing on click — now they all open newtab.
 const NOTIF_OPEN_PREFIXES = ['te-notif-', 'te-gnotif-', 'te-cnotif-', 'te-sub-notif-', 'te-storage-quota-'];
 chrome.notifications.onClicked.addListener((notifId) => {
