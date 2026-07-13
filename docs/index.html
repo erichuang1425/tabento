@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Folio · Local-first new tab workspace</title>
+  <title>Tabento · Local-first new tab workspace</title>
   <meta name="description" content="Free, source-available Chrome and Edge extension that replaces the new tab with a private workspace for saved tabs, notes, todos, and reminders. Hibernated tabs keep memory low. No account, no server, no host permissions.">
   <link rel="canonical" href="https://erichuang1425.github.io/tabento/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Folio · Local-first new tab workspace">
+  <meta property="og:title" content="Tabento · Local-first new tab workspace">
   <meta property="og:description" content="Save tabs next to notes, todos, and reminders. Hibernated placeholders keep memory low. No account, nothing leaves your machine.">
   <meta property="og:url" content="https://erichuang1425.github.io/tabento/">
   <meta property="og:image" content="https://erichuang1425.github.io/tabento/images/tabento-workspace-demo.png">
@@ -30,33 +30,33 @@
     })();
   </script>
   <style>
-    /* Palettes lifted from themes.css: [data-theme="folio"] and [data-theme="folio-dark"].
+    /* Palettes lifted from themes.css: [data-theme="tabento"] and [data-theme="tabento-dark"].
        If those tokens change in the extension, mirror them here. */
     :root {
-      --bg: #eef1fb; --bg-deep: #e6eaf7; --panel: #ffffff;
-      --border: rgba(40,52,95,0.10); --border2: rgba(40,52,95,0.17);
-      --text: #141828; --text2: #565d75; --text3: #9298ae;
-      --accent: #4f66f0; --accent2: #8b5cf6; --accent-link: #4453e6;
-      --btn-bg: #5566f2; --btn-bg-h: #4453e6; --btn-text: #ffffff;
-      --ico-bg: rgba(85,102,242,0.10);
-      --grad: linear-gradient(135deg, #3E82F7, #9061F3);
-      --nav-bg: rgba(238,241,251,0.82);
-      --shadow-lg: 0 24px 60px rgba(43,54,116,0.14), 0 6px 18px rgba(43,54,116,0.08);
-      --shadow-sm: 0 2px 10px rgba(43,54,116,0.07);
-      --code-bg: rgba(40,52,95,0.06);
+      --bg: #f6efdf; --bg-deep: #efe3c8; --panel: #fdf9f1;
+      --border: rgba(90,66,30,0.12); --border2: rgba(90,66,30,0.20);
+      --text: #2b2118; --text2: #6b5a44; --text3: #9c8a6c;
+      --accent: #c2761a; --accent2: #d2542f; --accent-link: #96590c;
+      --btn-bg: #c2761a; --btn-bg-h: #a9620f; --btn-text: #1a1006;
+      --ico-bg: rgba(194,118,26,0.10);
+      --grad: linear-gradient(135deg, #c2761a, #d2542f);
+      --nav-bg: rgba(246,239,223,0.86);
+      --shadow-lg: 0 24px 60px rgba(74,52,20,0.16), 0 6px 18px rgba(74,52,20,0.08);
+      --shadow-sm: 0 2px 10px rgba(74,52,20,0.07);
+      --code-bg: rgba(90,66,30,0.07);
     }
     [data-theme="dark"] {
-      --bg: #0c0e1a; --bg-deep: #080a12; --panel: #141626;
-      --border: rgba(160,175,255,0.10); --border2: rgba(160,175,255,0.18);
-      --text: #eef0fb; --text2: #a3a9c8; --text3: #656d92;
-      --accent: #8b9bff; --accent2: #b78cff; --accent-link: #a9b4ff;
-      --btn-bg: #5b6ef5; --btn-bg-h: #6f7ff8; --btn-text: #ffffff;
-      --ico-bg: rgba(139,155,255,0.10);
-      --grad: linear-gradient(135deg, #6a8dff, #b78cff);
-      --nav-bg: rgba(12,14,26,0.82);
-      --shadow-lg: 0 24px 60px rgba(0,0,0,0.5), 0 6px 18px rgba(0,0,0,0.34);
-      --shadow-sm: 0 2px 10px rgba(0,0,0,0.34);
-      --code-bg: rgba(160,175,255,0.08);
+      --bg: #17120d; --bg-deep: #100c08; --panel: #1f1812;
+      --border: rgba(245,222,180,0.09); --border2: rgba(245,222,180,0.18);
+      --text: #f6ecda; --text2: #c6b498; --text3: #8a775d;
+      --accent: #f5b841; --accent2: #ec6f4c; --accent-link: #f5b841;
+      --btn-bg: #e8902a; --btn-bg-h: #f5a742; --btn-text: #17120d;
+      --ico-bg: rgba(245,184,65,0.08);
+      --grad: linear-gradient(135deg, #f5b841, #ec6f4c);
+      --nav-bg: rgba(23,18,13,0.86);
+      --shadow-lg: 0 24px 60px rgba(0,0,0,0.45), 0 6px 18px rgba(0,0,0,0.3);
+      --shadow-sm: 0 2px 10px rgba(0,0,0,0.3);
+      --code-bg: rgba(245,222,180,0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -117,9 +117,7 @@
     .hero { position: relative; padding: clamp(64px, 10vh, 110px) 0 clamp(48px, 7vh, 84px); text-align: center; overflow: hidden; }
     .hero::before {
       content: ""; position: absolute; inset: -40% -20% auto; height: 130%;
-      background:
-        radial-gradient(ellipse 42% 42% at 34% 4%, rgba(62,130,247,0.10), transparent 68%),
-        radial-gradient(ellipse 42% 42% at 66% 6%, rgba(144,97,243,0.10), transparent 70%);
+      background: radial-gradient(ellipse 55% 45% at 50% 8%, rgba(210,84,47,0.07), transparent 70%);
       pointer-events: none;
     }
     .eyebrow {
@@ -157,7 +155,6 @@
     .frame-bar { display: flex; gap: 6px; padding: 11px 14px; border-bottom: 1px solid var(--border); }
     .frame-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--border2); }
     .frame img { display: block; width: 100%; height: auto; }
-    .hero-canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--bg-deep); }
     .shot-cap { font-size: 13px; color: var(--text2); margin-top: 14px; }
 
     /* ── Sections ────────────────────────────────────── */
@@ -277,9 +274,9 @@
 
   <nav>
     <div class="wrap nav-in">
-      <a class="brand" href="#top" aria-label="Folio, back to top">
+      <a class="brand" href="#top" aria-label="Tabento, back to top">
         <img src="images/icon128.png" alt="" width="26" height="26">
-        <span>Folio</span>
+        <span>Tabento</span>
       </a>
       <div class="nav-links">
         <a href="#workspace" data-i18n="nav.workspace">Workspace</a>
@@ -322,12 +319,11 @@
         <figure>
           <div class="frame">
             <div class="frame-bar" aria-hidden="true"><i></i><i></i><i></i></div>
-            <canvas id="hero-canvas" class="hero-canvas"
-                    role="img"
-                    aria-label="Scattered browser links, favicons, and bookmark cards flowing together and settling into an organized bento of spaces"
-                    data-i18n-label="hero.alt"></canvas>
+            <img src="images/tabento-workspace-demo.png" width="1600" height="900"
+                 alt="Tabento board view in the rice-paper theme: three groups named Launch, Research, and Ideas holding saved tabs, notes, and todos, with a sidebar listing open tabs"
+                 data-i18n-alt="hero.alt" fetchpriority="high">
           </div>
-          <figcaption class="shot-cap" data-i18n="hero.cap">Scattered links, settling into organized spaces.</figcaption>
+          <figcaption class="shot-cap" data-i18n="hero.cap">The board view, rice-paper theme. Real UI, captured from the extension.</figcaption>
         </figure>
       </div>
     </header>
@@ -337,7 +333,7 @@
       <div class="wrap">
         <p class="kick rv" data-i18n="mo.kick">What it does</p>
         <h2 class="rv" data-i18n="mo.h2">Keep your context without carrying the weight.</h2>
-        <p class="lede rv" data-i18n="mo.lede">Browser work piles up because it is unfinished. Folio gives that pile a place to live, and gives you your memory back.</p>
+        <p class="lede rv" data-i18n="mo.lede">Browser work piles up because it is unfinished. Tabento gives that pile a place to live, and gives you your memory back.</p>
         <div class="grid3">
           <div class="card rv">
             <h3 data-i18n="mo.c1.h">Save the mess</h3>
@@ -384,12 +380,10 @@
           <div class="row rv">
             <h3 data-i18n="ws.r3.h">Your look</h3>
             <div>
-              <p data-i18n="ws.r3.p">Seventeen themes, seven typefaces, three densities, adjustable column widths. The most-visited page in your browser should look like yours.</p>
+              <p data-i18n="ws.r3.p">Fifteen themes, seven typefaces, three densities, adjustable column widths. The most-visited page in your browser should look like yours.</p>
               <div class="swatches" aria-hidden="true">
-                <span class="sw" style="--sw-bg:#eef1fb;--sw-ac:#5566f2" title="Folio"></span>
-                <span class="sw" style="--sw-bg:#0c0e1a;--sw-ac:#8b9bff" title="Folio Dark"></span>
-                <span class="sw" style="--sw-bg:#f0e4cb;--sw-ac:#c2761a" title="Rice Paper"></span>
-                <span class="sw" style="--sw-bg:#17120d;--sw-ac:#f5b841" title="Lacquer"></span>
+                <span class="sw" style="--sw-bg:#f0e4cb;--sw-ac:#c2761a" title="Tabento"></span>
+                <span class="sw" style="--sw-bg:#17120d;--sw-ac:#f5b841" title="Tabento Dark"></span>
                 <span class="sw" style="--sw-bg:#f4f4f7;--sw-ac:#4f46e5" title="Light"></span>
                 <span class="sw" style="--sw-bg:#0b0b10;--sw-ac:#818cf8" title="Dark"></span>
                 <span class="sw" style="--sw-bg:#0a0c14;--sw-ac:#5eead4" title="Aurora"></span>
@@ -404,7 +398,7 @@
                 <span class="sw" style="--sw-bg:#f4ecd8;--sw-ac:#8b4513" title="Sepia"></span>
                 <span class="sw" style="--sw-bg:#0a0a0a;--sw-ac:#ffffff" title="Mono"></span>
               </div>
-              <p class="sw-cap" data-i18n="ws.swcap">All seventeen, from rice paper and lacquer to Nord, Gruvbox, and Rosé Pine.</p>
+              <p class="sw-cap" data-i18n="ws.swcap">All fifteen, from rice paper and lacquer to Nord, Gruvbox, and Rosé Pine.</p>
             </div>
           </div>
         </div>
@@ -438,11 +432,11 @@
       <div class="wrap">
         <p class="kick rv" data-i18n="pv.kick">Privacy</p>
         <h2 class="rv" data-i18n="pv.h2">Nothing leaves your machine</h2>
-        <p class="lede rv" data-i18n="pv.lede">A tab manager sees what you work on. That is exactly why Folio is built so it cannot tell anyone.</p>
+        <p class="lede rv" data-i18n="pv.lede">A tab manager sees what you work on. That is exactly why Tabento is built so it cannot tell anyone.</p>
         <div class="grid3s">
           <div class="pv rv"><h3 data-i18n="pv.i1.h">No account</h3><p data-i18n="pv.i1.p">Nothing to sign up for. Open a new tab and it works.</p></div>
           <div class="pv rv"><h3 data-i18n="pv.i2.h">No server</h3><p data-i18n="pv.i2.p">Data lives in chrome.storage.local on your device. There is no backend to breach.</p></div>
-          <div class="pv rv"><h3 data-i18n="pv.i3.h">No host permissions</h3><p data-i18n="pv.i3.p">Folio cannot read or change the sites you visit. The manifest is one file; check it.</p></div>
+          <div class="pv rv"><h3 data-i18n="pv.i3.h">No host permissions</h3><p data-i18n="pv.i3.p">Tabento cannot read or change the sites you visit. The manifest is one file; check it.</p></div>
           <div class="pv rv"><h3 data-i18n="pv.i4.h">Portable data</h3><p data-i18n="pv.i4.p">Export everything as JSON. Imports show a preview before touching your data.</p></div>
           <div class="pv rv"><h3 data-i18n="pv.i5.h">Blur for screen shares</h3><p data-i18n="pv.i5.p">One setting blurs the whole board when someone else can see your screen.</p></div>
           <div class="pv rv"><h3 data-i18n="pv.i6.h">Source available</h3><p data-i18n="pv.i6.p">Research, contribution, and informal personal use only. No commercial use in any form.</p></div>
@@ -455,7 +449,7 @@
     <section id="roadmap">
       <div class="wrap">
         <span class="plan-pill rv" data-i18n="rm.pill">Planned, not shipped</span>
-        <h2 class="rv" data-i18n="rm.h2">Where Folio is headed</h2>
+        <h2 class="rv" data-i18n="rm.h2">Where Tabento is headed</h2>
         <p class="lede rv" data-i18n="rm.lede">Useful today, heading somewhere specific. None of this exists yet, and the page you are reading does not depend on it.</p>
         <div class="rm">
           <div class="rv">
@@ -468,7 +462,7 @@
           </div>
           <div class="rv">
             <h3 data-i18n="rm.i3.h">Automation you own</h3>
-            <p data-i18n="rm.i3.p">If Folio ever talks to outside services, you bring your own API keys. No cloud account to rent.</p>
+            <p data-i18n="rm.i3.p">If Tabento ever talks to outside services, you bring your own API keys. No cloud account to rent.</p>
           </div>
           <div class="rv">
             <h3 data-i18n="rm.i4.h">Optional encrypted sync</h3>
@@ -483,7 +477,7 @@
       <div class="wrap">
         <p class="kick rv" data-i18n="in.kick">Install</p>
         <h2 class="rv" data-i18n="in.h2">Install in about a minute</h2>
-        <p class="lede rv" data-i18n="in.lede">Folio is not on the Chrome Web Store yet. Until it is, it loads as an unpacked extension:</p>
+        <p class="lede rv" data-i18n="in.lede">Tabento is not on the Chrome Web Store yet. Until it is, it loads as an unpacked extension:</p>
         <ol class="steps rv">
           <li data-i18n="in.s1">Download or clone the repository from GitHub.</li>
           <li><span data-i18n="in.s2">Open</span> <code>chrome://extensions</code> <span data-i18n="in.s2b">(or</span> <code>edge://extensions</code><span data-i18n="in.s2c">) and turn on Developer mode.</span></li>
@@ -491,7 +485,7 @@
           <li data-i18n="in.s4">Open a new tab. That's it.</li>
         </ol>
         <div class="cta-row rv" style="justify-content:flex-start">
-          <a class="btn btn-pri" href="https://github.com/erichuang1425/tabento" data-i18n="in.cta">Get Folio on GitHub</a>
+          <a class="btn btn-pri" href="https://github.com/erichuang1425/tabento" data-i18n="in.cta">Get Tabento on GitHub</a>
         </div>
         <p class="store-note rv" style="margin-top:14px" data-i18n="in.note">Free for noncommercial research, contribution, and informal personal use. Chrome and Edge, Manifest V3.</p>
       </div>
@@ -501,7 +495,7 @@
   <footer>
     <div class="wrap ft">
       <div>
-        <div class="ft-brand"><img src="images/icon128.png" alt=""><span>Folio</span></div>
+        <div class="ft-brand"><img src="images/icon128.png" alt=""><span>Tabento</span></div>
         <p class="ft-line" data-i18n="ft.line">A local-first new tab workspace. Free for research, contribution, and informal personal use.</p>
       </div>
       <div class="ft-links">
@@ -520,7 +514,7 @@
       /* ── Strings ── */
       var STR = {
         en: {
-          'meta.title': 'Folio · Local-first new tab workspace',
+          'meta.title': 'Tabento · Local-first new tab workspace',
           'skip': 'Skip to content',
           'nav.workspace': 'Workspace', 'nav.tools': 'Tools', 'nav.privacy': 'Privacy', 'nav.roadmap': 'Roadmap',
           'hero.eyebrow': 'Free, source-available extension for Chrome and Edge',
@@ -530,11 +524,11 @@
           'hero.cta2': "See what's inside",
           'hero.note': 'Not on the Chrome Web Store yet. Installs unpacked in about a minute.',
           'chip.local': 'Local-first', 'chip.perm': 'No host permissions', 'chip.acct': 'No account', 'chip.license': 'Research-use license',
-          'hero.alt': 'Scattered browser links, favicons, and bookmark cards flowing together and settling into an organized bento of spaces',
-          'hero.cap': 'Scattered links, settling into organized spaces.',
+          'hero.alt': 'Tabento board view in the rice-paper theme: three groups named Launch, Research, and Ideas holding saved tabs, notes, and todos, with a sidebar listing open tabs',
+          'hero.cap': 'The board view, rice-paper theme. Real UI, captured from the extension.',
           'mo.kick': 'What it does',
           'mo.h2': 'Keep your context without carrying the weight.',
-          'mo.lede': 'Browser work piles up because it is unfinished. Folio gives that pile a place to live, and gives you your memory back.',
+          'mo.lede': 'Browser work piles up because it is unfinished. Tabento gives that pile a place to live, and gives you your memory back.',
           'mo.c1.h': 'Save the mess',
           'mo.c1.p': 'One click saves the current tab or every tab in the window. Right-click saves pages, links, selected text, and images. Bookmarks import. Ctrl+Shift+S works from anywhere.',
           'mo.c2.h': 'Reopen only what matters',
@@ -551,8 +545,8 @@
           'ws.lay.board': 'Board', 'ws.lay.list': 'List', 'ws.lay.canvas': 'Canvas',
           'ws.lay.explorer': 'Explorer', 'ws.lay.timeline': 'Timeline', 'ws.lay.calendar': '+ Calendar',
           'ws.r3.h': 'Your look',
-          'ws.r3.p': 'Seventeen themes, seven typefaces, three densities, adjustable column widths. The most-visited page in your browser should look like yours.',
-          'ws.swcap': 'All seventeen, from rice paper and lacquer to Nord, Gruvbox, and Rosé Pine.',
+          'ws.r3.p': 'Fifteen themes, seven typefaces, three densities, adjustable column widths. The most-visited page in your browser should look like yours.',
+          'ws.swcap': 'All fifteen, from rice paper and lacquer to Nord, Gruvbox, and Rosé Pine.',
           'tl.kick': 'Built-in tools',
           'tl.h2': 'Small tools, one workspace',
           'tl.lede': 'Eight trackers are built in and open from the Tools hub. Each pops out as a floating mini-window you can drag anywhere. Use two of them, or none; they stay out of the way until asked.',
@@ -567,39 +561,39 @@
           'tl.note': 'All eight ship with the extension today. Nothing here is a mockup.',
           'pv.kick': 'Privacy',
           'pv.h2': 'Nothing leaves your machine',
-          'pv.lede': 'A tab manager sees what you work on. That is exactly why Folio is built so it cannot tell anyone.',
+          'pv.lede': 'A tab manager sees what you work on. That is exactly why Tabento is built so it cannot tell anyone.',
           'pv.i1.h': 'No account', 'pv.i1.p': 'Nothing to sign up for. Open a new tab and it works.',
           'pv.i2.h': 'No server', 'pv.i2.p': 'Data lives in chrome.storage.local on your device. There is no backend to breach.',
-          'pv.i3.h': 'No host permissions', 'pv.i3.p': 'Folio cannot read or change the sites you visit. The manifest is one file; check it.',
+          'pv.i3.h': 'No host permissions', 'pv.i3.p': 'Tabento cannot read or change the sites you visit. The manifest is one file; check it.',
           'pv.i4.h': 'Portable data', 'pv.i4.p': 'Export everything as JSON. Imports show a preview before touching your data.',
           'pv.i5.h': 'Blur for screen shares', 'pv.i5.p': 'One setting blurs the whole board when someone else can see your screen.',
           'pv.i6.h': 'Source available', 'pv.i6.p': 'Research, contribution, and informal personal use only. No commercial use in any form.',
           'pv.note': 'Six browser permissions, each explained in the', 'pv.note2': '.',
           'rm.pill': 'Planned, not shipped',
-          'rm.h2': 'Where Folio is headed',
+          'rm.h2': 'Where Tabento is headed',
           'rm.lede': 'Useful today, heading somewhere specific. None of this exists yet, and the page you are reading does not depend on it.',
           'rm.i1.h': 'A plugin library',
           'rm.i1.p': 'The eight tools are built in today. The plan is to rebuild them as plugins, so the workspace grows tool by tool and you add only what earns space.',
           'rm.i2.h': 'A desktop companion',
           'rm.i2.p': 'A desktop app that shares the same local-first data as the extension.',
           'rm.i3.h': 'Automation you own',
-          'rm.i3.p': 'If Folio ever talks to outside services, you bring your own API keys. No cloud account to rent.',
+          'rm.i3.p': 'If Tabento ever talks to outside services, you bring your own API keys. No cloud account to rent.',
           'rm.i4.h': 'Optional encrypted sync',
           'rm.i4.p': 'Across devices, without giving up local-first defaults.',
           'in.kick': 'Install',
           'in.h2': 'Install in about a minute',
-          'in.lede': 'Folio is not on the Chrome Web Store yet. Until it is, it loads as an unpacked extension:',
+          'in.lede': 'Tabento is not on the Chrome Web Store yet. Until it is, it loads as an unpacked extension:',
           'in.s1': 'Download or clone the repository from GitHub.',
           'in.s2': 'Open', 'in.s2b': '(or', 'in.s2c': ') and turn on Developer mode.',
           'in.s3': 'Click "Load unpacked" and choose the tabento folder.',
           'in.s4': "Open a new tab. That's it.",
-          'in.cta': 'Get Folio on GitHub',
+          'in.cta': 'Get Tabento on GitHub',
           'in.note': 'Free for noncommercial research, contribution, and informal personal use. Chrome and Edge, Manifest V3.',
           'ft.line': 'A local-first new tab workspace. Free for research, contribution, and informal personal use.',
           'ft.rel': 'Release notes', 'ft.lic': 'Research-use license'
         },
         zh: {
-          'meta.title': 'Folio · 資料留在本機的新分頁工作區',
+          'meta.title': 'Tabento · 資料留在本機的新分頁工作區',
           'skip': '跳到主要內容',
           'nav.workspace': '工作區', 'nav.tools': '工具', 'nav.privacy': '隱私', 'nav.roadmap': '未來規劃',
           'hero.eyebrow': '免費、原始碼可查閱的 Chrome / Edge 擴充功能',
@@ -609,11 +603,11 @@
           'hero.cta2': '看看裡面有什麼',
           'hero.note': '還沒上架 Chrome 線上應用程式商店。以未封裝方式安裝，大約一分鐘。',
           'chip.local': '資料留在本機', 'chip.perm': '不需主機權限', 'chip.acct': '免帳號', 'chip.license': '研究使用授權',
-          'hero.alt': '散落的瀏覽器連結、網站圖示與書籤卡片匯聚起來，安放成井然有序的便當式空間',
-          'hero.cap': '散落的連結，安放成井然有序的空間。',
+          'hero.alt': 'Tabento 看板檢視、米紙主題：Launch、Research、Ideas 三個群組，放著已儲存的分頁、筆記和待辦，側邊欄列出目前開啟的分頁',
+          'hero.cap': '看板檢視、米紙主題。擷取自擴充功能的真實畫面。',
           'mo.kick': '它做什麼',
           'mo.h2': '保留脈絡，不用扛著重量。',
-          'mo.lede': '瀏覽器會塞滿，是因為事情還沒做完。Folio 給這堆未完成的事一個家，也把記憶體還給你。',
+          'mo.lede': '瀏覽器會塞滿，是因為事情還沒做完。Tabento 給這堆未完成的事一個家，也把記憶體還給你。',
           'mo.c1.h': '先把混亂存下來',
           'mo.c1.p': '一鍵儲存目前分頁，或整個視窗的所有分頁。右鍵可以存網頁、連結、選取的文字和圖片。書籤可匯入，Ctrl+Shift+S 隨處可用。',
           'mo.c2.h': '只重開真正需要的',
@@ -630,8 +624,8 @@
           'ws.lay.board': '看板', 'ws.lay.list': '清單', 'ws.lay.canvas': '畫布',
           'ws.lay.explorer': '樹狀總管', 'ws.lay.timeline': '時間軸', 'ws.lay.calendar': '+ 行事曆',
           'ws.r3.h': '外觀由你決定',
-          'ws.r3.p': '十七種主題、七種字體、三種密度、欄寬可調。瀏覽器裡你最常看到的頁面，本來就該長得像你的。',
-          'ws.swcap': '十七種主題，從米紙、深色漆器到 Nord、Gruvbox 和 Rosé Pine。',
+          'ws.r3.p': '十五種主題、七種字體、三種密度、欄寬可調。瀏覽器裡你最常看到的頁面，本來就該長得像你的。',
+          'ws.swcap': '十五種主題，從米紙、深色漆器到 Nord、Gruvbox 和 Rosé Pine。',
           'tl.kick': '內建工具',
           'tl.h2': '小工具，同一個工作區',
           'tl.lede': '內建八個追蹤工具，從工具中心開啟，每一個都能彈出成可拖曳的迷你視窗。想只用兩個也行，都不用也行，不叫它們就不出現。',
@@ -646,33 +640,33 @@
           'tl.note': '這八個工具現在就隨擴充功能提供，沒有一個是示意圖。',
           'pv.kick': '隱私',
           'pv.h2': '資料不離開你的電腦',
-          'pv.lede': '分頁管理工具看得到你在忙什麼。正因如此，Folio 的設計讓它根本無從告訴任何人。',
+          'pv.lede': '分頁管理工具看得到你在忙什麼。正因如此，Tabento 的設計讓它根本無從告訴任何人。',
           'pv.i1.h': '免帳號', 'pv.i1.p': '沒有東西要註冊。打開新分頁就能用。',
           'pv.i2.h': '沒有伺服器', 'pv.i2.p': '資料存在你裝置上的 chrome.storage.local。沒有後端，也就沒有可以外洩的地方。',
-          'pv.i3.h': '不需主機權限', 'pv.i3.p': 'Folio 無法讀取或更動你瀏覽的網站。manifest 就一個檔案，歡迎自己看。',
+          'pv.i3.h': '不需主機權限', 'pv.i3.p': 'Tabento 無法讀取或更動你瀏覽的網站。manifest 就一個檔案，歡迎自己看。',
           'pv.i4.h': '資料帶得走', 'pv.i4.p': '所有資料可匯出成 JSON。匯入前會先顯示預覽，才會動到你的資料。',
           'pv.i5.h': '螢幕分享模糊', 'pv.i5.p': '一個設定就能把整個看板模糊掉，投影和開會時不心驚。',
           'pv.i6.h': '原始碼可查閱', 'pv.i6.p': '僅限研究、貢獻與非正式個人使用。不允許任何形式的商業使用。',
           'pv.note': '總共六個瀏覽器權限，每一個都在', 'pv.note2': ' 裡說明。',
           'rm.pill': '規劃中，尚未推出',
-          'rm.h2': 'Folio 要往哪裡去',
+          'rm.h2': 'Tabento 要往哪裡去',
           'rm.lede': '現在就好用，方向也很明確。以下這些都還不存在，而你正在看的這一頁，也不靠它們撐場。',
           'rm.i1.h': '外掛程式庫',
           'rm.i1.p': '這八個工具目前是內建的。計畫是把它們改寫成外掛，讓工作區一個工具一個工具長大，你只加真正值得佔位置的。',
           'rm.i2.h': '桌面版搭檔',
           'rm.i2.p': '一個桌面應用程式，與擴充功能共用同一份本機資料。',
           'rm.i3.h': '由你掌握的自動化',
-          'rm.i3.p': '如果 Folio 未來要連外部服務，金鑰由你自己帶，不必租用任何雲端帳號。',
+          'rm.i3.p': '如果 Tabento 未來要連外部服務，金鑰由你自己帶，不必租用任何雲端帳號。',
           'rm.i4.h': '可選的加密同步',
           'rm.i4.p': '跨裝置同步，但本機優先的預設不變。',
           'in.kick': '安裝',
           'in.h2': '安裝，大約一分鐘',
-          'in.lede': 'Folio 還沒上架 Chrome 線上應用程式商店。在那之前，以未封裝方式載入：',
+          'in.lede': 'Tabento 還沒上架 Chrome 線上應用程式商店。在那之前，以未封裝方式載入：',
           'in.s1': '從 GitHub 下載或 clone 這個儲存庫。',
           'in.s2': '打開', 'in.s2b': '（或', 'in.s2c': '），並開啟「開發人員模式」。',
           'in.s3': '點「載入未封裝項目」，選擇 tabento 資料夾。',
           'in.s4': '開一個新分頁，完成。',
-          'in.cta': '到 GitHub 取得 Folio',
+          'in.cta': '到 GitHub 取得 Tabento',
           'in.note': '免費供非商業研究、貢獻與非正式個人使用。支援 Chrome 與 Edge（Manifest V3）。',
           'ft.line': '資料留在本機的新分頁工作區。免費供研究、貢獻與非正式個人使用。',
           'ft.rel': '版本紀錄', 'ft.lic': '研究使用授權'
@@ -693,10 +687,6 @@
         document.querySelectorAll('[data-i18n-alt]').forEach(function (el) {
           var s = t[el.dataset.i18nAlt];
           if (s !== undefined) el.alt = s;
-        });
-        document.querySelectorAll('[data-i18n-label]').forEach(function (el) {
-          var s = t[el.dataset.i18nLabel];
-          if (s !== undefined) el.setAttribute('aria-label', s);
         });
         Object.keys(langBtns).forEach(function (k) {
           langBtns[k].classList.toggle('on', k === l);
@@ -730,226 +720,8 @@
       }
     })();
   </script>
-
-  <!-- ── Hero animation ──────────────────────────────────────────────
-       Scattered link chips flow together and settle into an organized bento.
-       One <canvas>, not hundreds of DOM nodes. Runs once (~2.2s) then holds a
-       calm final frame. prefers-reduced-motion → the settled frame, no motion.
-       Fewer chips on narrow viewports. Redraws on theme change / resize. -->
-  <script>
-  (function () {
-    var canvas = document.getElementById('hero-canvas');
-    if (!canvas || !canvas.getContext) return;
-    var ctx = canvas.getContext('2d');
-    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var DURATION = 2200;
-    var W = 0, H = 0, dpr = 1, cards = [], chips = [], startT = 0, raf = null, done = false;
-
-    var CHIP_COLORS_L = ['#3E82F7', '#7A5AF0', '#9061F3', '#2FA4C4', '#5566F2'];
-    var CHIP_COLORS_D = ['#6a8dff', '#9d8bff', '#b78cff', '#5fc4dc', '#8b9bff'];
-
-    function pal() {
-      var s = getComputedStyle(document.documentElement);
-      var dark = document.documentElement.dataset.theme === 'dark';
-      return {
-        dark: dark,
-        board: (s.getPropertyValue('--bg-deep').trim()) || (dark ? '#080a12' : '#e6eaf7'),
-        panel: dark ? '#171a2c' : '#ffffff',
-        edge: dark ? 'rgba(160,175,255,0.16)' : 'rgba(40,52,95,0.10)',
-        text: dark ? 'rgba(238,240,251,0.90)' : 'rgba(20,24,40,0.86)',
-        sub: dark ? 'rgba(163,169,200,0.55)' : 'rgba(86,93,117,0.42)',
-        line: dark ? 'rgba(139,155,255,0.30)' : 'rgba(85,102,242,0.26)',
-        blue: '#3E82F7', violet: '#9061F3',
-        accent: dark ? '#8b9bff' : '#5566f2',
-        chip: dark ? CHIP_COLORS_D : CHIP_COLORS_L
-      };
-    }
-
-    function rr(x, y, w, h, r) {
-      r = Math.max(0, Math.min(r, w / 2, h / 2));
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-    }
-    var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
-    var lerp = function (a, b, t) { return a + (b - a) * t; };
-    var clamp01 = function (t) { return t < 0 ? 0 : t > 1 ? 1 : t; };
-
-    function build() {
-      var rect = canvas.getBoundingClientRect();
-      if (rect.width < 4) { requestAnimationFrame(build); return; }
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      W = rect.width; H = rect.height || (rect.width * 9 / 16);
-      canvas.width = Math.round(W * dpr);
-      canvas.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      var pad = W * 0.045;
-      var railW = W * 0.15;
-      var gridX = pad + railW + pad * 0.8;
-      var gridW = W - gridX - pad;
-      var mobile = W < 560;
-      var cols = mobile ? 1 : 2;
-      var titles = mobile ? ['Research', 'Read Later'] : ['Research', 'Inspiration', 'Tools', 'Read Later'];
-      var rowsN = Math.ceil(titles.length / cols);
-      var gap = W * 0.024;
-      var cardW = (gridW - gap * (cols - 1)) / cols;
-      var topY = H * 0.15;
-      var cardH = (H - topY - pad - gap * (rowsN - 1)) / rowsN;
-
-      cards = []; chips = [];
-      titles.forEach(function (title, idx) {
-        var c = idx % cols, r = Math.floor(idx / cols);
-        var x = gridX + c * (cardW + gap);
-        var y = topY + r * (cardH + gap);
-        var headH = cardH * 0.30;
-        var perCard = mobile ? 3 : (idx % 2 === 0 ? 3 : 2);
-        var rowH = Math.min(H * 0.082, (cardH - headH - 6) / perCard);
-        var card = { x: x, y: y, w: cardW, h: cardH, headH: headH, rows: [] };
-        for (var i = 0; i < perCard; i++) {
-          card.rows.push({ x: x + 11, y: y + headH + i * rowH, w: cardW - 22, h: rowH - 7 });
-        }
-        cards.push(card);
-      });
-
-      cards.forEach(function (card) {
-        card.rows.forEach(function (row) {
-          var ang = Math.random() * Math.PI * 2;
-          var dist = (0.5 + Math.random() * 0.7) * Math.max(W, H) * 0.6;
-          chips.push({
-            tx: row.x, ty: row.y, tw: row.w, th: row.h,
-            sx: W * 0.52 + Math.cos(ang) * dist,
-            sy: H * 0.42 + Math.sin(ang) * dist * 0.68,
-            rot0: (Math.random() - 0.5) * 0.9,
-            col: pal().chip[(Math.random() * 5) | 0],
-            delay: Math.random() * 0.32
-          });
-        });
-      });
-    }
-
-    function frame(now) {
-      if (!startT) startT = now;
-      var prog = (reduce || done) ? 1 : clamp01((now - startT) / DURATION);
-      var p = pal();
-      var pad = W * 0.045, railW = W * 0.15;
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = p.board; ctx.fillRect(0, 0, W, H);
-
-      // Sidebar rail
-      var railA = easeOut(clamp01(prog * 1.5));
-      ctx.globalAlpha = railA;
-      ctx.fillStyle = p.panel;
-      rr(pad, H * 0.09, railW, H - H * 0.09 - pad, 12); ctx.fill();
-      ctx.strokeStyle = p.edge; ctx.lineWidth = 1;
-      rr(pad, H * 0.09, railW, H - H * 0.09 - pad, 12); ctx.stroke();
-      var bg = ctx.createLinearGradient(pad, H * 0.09, pad + railW, H * 0.09 + railW);
-      bg.addColorStop(0, p.blue); bg.addColorStop(1, p.violet);
-      ctx.fillStyle = bg;
-      rr(pad + 11, H * 0.09 + 12, railW * 0.26, railW * 0.26, 5); ctx.fill();
-      ctx.fillStyle = p.sub;
-      for (var k = 0; k < 5; k++) { rr(pad + 12, H * 0.09 + railW * 0.26 + 26 + k * (H * 0.072), railW * 0.66, 6, 3); ctx.fill(); }
-      ctx.globalAlpha = 1;
-
-      // Bento cards
-      cards.forEach(function (card) {
-        var ca = easeOut(clamp01((prog - 0.12) / 0.6));
-        if (ca <= 0) return;
-        ctx.globalAlpha = ca;
-        ctx.fillStyle = p.panel;
-        rr(card.x, card.y, card.w, card.h, 14); ctx.fill();
-        ctx.strokeStyle = p.edge; ctx.lineWidth = 1;
-        rr(card.x, card.y, card.w, card.h, 14); ctx.stroke();
-        var g = ctx.createLinearGradient(card.x, card.y, card.x + card.w * 0.2, card.y + card.w * 0.2);
-        g.addColorStop(0, p.blue); g.addColorStop(1, p.violet);
-        ctx.fillStyle = g;
-        var tile = Math.min(card.w * 0.15, card.headH * 0.6);
-        rr(card.x + 12, card.y + 12, tile, tile, 6); ctx.fill();
-        ctx.fillStyle = p.text;
-        rr(card.x + 12 + tile + 8, card.y + 15, card.w * 0.36, 7, 3); ctx.fill();
-        ctx.fillStyle = p.sub;
-        rr(card.x + 12 + tile + 8, card.y + 27, card.w * 0.22, 5, 2); ctx.fill();
-        ctx.globalAlpha = 1;
-      });
-
-      // Flow lines while chips travel
-      if (prog < 1) {
-        ctx.lineWidth = 1;
-        chips.forEach(function (ch) {
-          var lp = clamp01((prog - ch.delay) / (1 - ch.delay));
-          if (lp <= 0 || lp >= 1) return;
-          var e = easeOut(lp);
-          ctx.strokeStyle = p.line;
-          ctx.globalAlpha = (1 - prog) * 0.5 * lp;
-          ctx.beginPath();
-          ctx.moveTo(ch.tx + ch.tw / 2, ch.ty + ch.th / 2);
-          ctx.lineTo(lerp(ch.sx, ch.tx, e) + ch.tw / 2, lerp(ch.sy, ch.ty, e) + ch.th / 2);
-          ctx.stroke();
-        });
-        ctx.globalAlpha = 1;
-      }
-
-      // Chips → link rows
-      chips.forEach(function (ch) {
-        var lp = (reduce || done) ? 1 : clamp01((prog - ch.delay) / (1 - ch.delay));
-        var e = easeOut(lp);
-        var x = lerp(ch.sx, ch.tx, e), y = lerp(ch.sy, ch.ty, e);
-        var rot = lerp(ch.rot0, 0, e);
-        ctx.save();
-        ctx.translate(x + ch.tw / 2, y + ch.th / 2);
-        ctx.rotate(rot);
-        ctx.globalAlpha = clamp01(0.2 + e);
-        // Floating chip card fades away as it lands into the (already drawn) bento row
-        var bgA = (1 - e) * (p.dark ? 0.5 : 0.95);
-        if (bgA > 0.01) {
-          ctx.fillStyle = p.dark ? 'rgba(30,34,54,' + bgA + ')' : 'rgba(255,255,255,' + bgA + ')';
-          rr(-ch.tw / 2, -ch.th / 2, ch.tw, ch.th, 6); ctx.fill();
-          ctx.strokeStyle = p.edge; ctx.lineWidth = 1;
-          rr(-ch.tw / 2, -ch.th / 2, ch.tw, ch.th, 6); ctx.stroke();
-        }
-        var fav = Math.min(ch.th * 0.62, 14);
-        ctx.fillStyle = ch.col;
-        rr(-ch.tw / 2 + 5, -fav / 2, fav, fav, 3); ctx.fill();
-        ctx.fillStyle = p.text;
-        rr(-ch.tw / 2 + 5 + fav + 7, -ch.th * 0.24, ch.tw * 0.52, 5, 2); ctx.fill();
-        ctx.fillStyle = p.sub;
-        rr(-ch.tw / 2 + 5 + fav + 7, ch.th * 0.08, ch.tw * 0.34, 4, 2); ctx.fill();
-        ctx.restore();
-      });
-      ctx.globalAlpha = 1;
-
-      if (!reduce && !done && prog < 1) { raf = requestAnimationFrame(frame); }
-      else { done = true; raf = null; }
-    }
-
-    function start() {
-      build();
-      if (W < 4) { requestAnimationFrame(start); return; }
-      done = false; startT = 0;
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(frame);
-    }
-    function redraw() { if (W >= 4) { done = true; frame(performance.now()); } }
-
-    start();
-
-    var rt = null;
-    window.addEventListener('resize', function () {
-      clearTimeout(rt);
-      rt = setTimeout(function () { build(); redraw(); }, 180);
-    });
-    // Repaint with the new palette when the landing theme toggles.
-    new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  })();
-  </script>
-
   <noscript>
-    <style>.rv { opacity: 1; transform: none; } .nav-ctl { display: none; } .hero-canvas { display: none; }</style>
+    <style>.rv { opacity: 1; transform: none; } .nav-ctl { display: none; }</style>
   </noscript>
 </body>
 </html>

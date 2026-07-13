@@ -1,8 +1,4 @@
-# Folio
-
-<p align="center">
-  <img src="./media/png/icon_with_name.png" alt="Folio" width="420">
-</p>
+# Tabento
 
 <p>
   <a href="./manifest.json"><img src="https://img.shields.io/badge/version-v3.1.0-4f46e5?style=flat-square" alt="version v3.1.0"></a>
@@ -16,19 +12,21 @@
 
 Landing page: [docs/index.html](./docs/index.html), ready for GitHub Pages (Settings → Pages → deploy from `main`, `/docs` folder → publishes at <https://erichuang1425.github.io/tabento/>). Positioning notes live in [docs/landing-page-strategy.md](./docs/landing-page-strategy.md).
 
-Folio replaces the Chromium new tab page. It helps you save tabs, group them with notes and todos, search them later, and reopen pages without keeping every tab loaded. Data stays in `chrome.storage.local`; the extension has no account system, no server, no host permissions, and no page-content reading.
+Tabento replaces the Chromium new tab page. It helps you save tabs, group them with notes and todos, search them later, and reopen pages without keeping every tab loaded. Data stays in `chrome.storage.local`; the extension has no account system, no server, no host permissions, and no page-content reading.
 
-## Screenshot
+### Hibernate tabs to save memory
 
-![Folio workspace home screen](./docs/images/folio-workspace-screenshot.png)
+Reopen any saved page through a light placeholder that loads the real site only when you click it. A workspace of 50 tabs costs almost nothing until you need them, the browser stays fast, and it works without host permissions or background loading. This is the core trade Tabento makes: keep your context without paying for it in RAM.
 
-Folio's home surface brings saved spaces, open tabs, search, privacy signals, and local storage status into one calm new-tab workspace.
+<p align="center">
+  <img src="./icons/icon128.png" alt="Tabento icon" width="120">
+</p>
 
 <p align="center">
   <samp>
-    <a href="#why-folio">Why</a> |
+    <a href="#why-tabento">Why</a> |
     <a href="#what-it-does">What it does</a> |
-    <a href="#screenshot">Screenshot</a> |
+    <a href="#screenshots">Screenshots</a> |
     <a href="#install">Install</a> |
     <a href="#development">Development</a> |
     <a href="#roadmap">Roadmap</a>
@@ -37,15 +35,11 @@ Folio's home surface brings saved spaces, open tabs, search, privacy signals, an
 
 ---
 
-### Hibernate tabs to save memory
-
-Reopen any saved page through a light placeholder that loads the real site only when you click it. A workspace of 50 tabs costs almost nothing until you need them, the browser stays fast, and it works without host permissions or background loading. This is the core trade Folio makes: keep your context without paying for it in RAM.
-
-## Why Folio
+## Why Tabento
 
 Browser work is rarely just tabs. A session can include research links, half-written plans, reminders, reference pages, recurring routines, and things you want to reopen later without keeping them alive forever.
 
-Folio keeps that context in the new tab page:
+Tabento keeps that context in the new tab page:
 
 - Save the current tab, every tab in a window, bookmarks, links, selections, or images.
 - Organize saved context into workspaces, categories, groups, stacks, colors, and views.
@@ -66,13 +60,19 @@ Folio keeps that context in the new tab page:
 | Popup | Save the current tab, save every open tab, and inspect open tabs from the extension action. |
 | Tools | Use built-in Pomodoro, finance diary, subscriptions, habits, hydration, reading, goals, and workout trackers. |
 | Portability | Export and import data with a versioned envelope and preview step before restore. |
-| Privacy | Keep data in `chrome.storage.local`; Folio requests no host permissions and never reads page content on its own (only selections you explicitly save). |
+| Privacy | Keep data in `chrome.storage.local`; Tabento requests no host permissions and never reads page content on its own (only selections you explicitly save). |
 
 Example search:
 
 ```text
 type:tab in:work domain:github.com "pull request" -is:done
 ```
+
+## Screenshots
+
+![Tabento workspace board](./docs/images/tabento-workspace-demo.png)
+
+Demo workspace captured from the unpacked Edge extension.
 
 ## Tech stack
 
@@ -91,9 +91,9 @@ type:tab in:work domain:github.com "pull request" -is:done
 3. Enable **Developer mode**.
 4. Choose **Load unpacked**.
 5. Select the repository folder.
-6. Open a new tab to launch Folio.
+6. Open a new tab to launch Tabento.
 
-After editing extension files, reload Folio from the browser extensions page.
+After editing extension files, reload Tabento from the browser extensions page.
 
 ## Usage
 
@@ -133,7 +133,7 @@ tabento/
 
 ## Development
 
-Folio has no package install and no build command.
+Tabento has no package install and no build command.
 
 Run the validation checks used by CI:
 
@@ -172,7 +172,7 @@ The current product release is documented in [RELEASE_NOTES.md](./RELEASE_NOTES.
 
 ## Privacy
 
-Folio keeps data local:
+Tabento keeps data local:
 
 - Stored URLs, titles, notes, todos, reminders, workspace state, and tool data live in `chrome.storage.local`.
 - The extension does not request host permissions.
@@ -198,6 +198,6 @@ Folio keeps data local:
 
 ## License
 
-Folio is source-available under the [Folio Research and Contribution License 1.0](./LICENSE).
+Tabento is source-available under the [Tabento Research and Contribution License 1.0](./LICENSE).
 
-Commercial use is not permitted in any kind or form. The source may be used only for noncommercial research, private study, informal personal experimentation, hobby use, and contributions back to the Folio project, unless a separate written license from the copyright holder says otherwise.
+Commercial use is not permitted in any kind or form. The source may be used only for noncommercial research, private study, informal personal experimentation, hobby use, and contributions back to the Tabento project, unless a separate written license from the copyright holder says otherwise.
