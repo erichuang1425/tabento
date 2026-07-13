@@ -30,7 +30,9 @@
       try { m = JSON.parse(localStorage.getItem('te_settings_mirror') || '{}') || {}; } catch (e) {}
       function supportedLang(value) {
         var lang = String(value || 'en').trim();
-        return /^zh(?:[-_]|$)/i.test(lang) ? 'zh-TW' : 'en';
+        if (/^zh(?:[-_](?:tw|hk|mo|hant))$/i.test(lang)) return 'zh-TW';
+        if (/^zh(?:[-_]|$)/i.test(lang)) return 'zh-CN';
+        return /^(es|ja|fr)$/i.test(lang) ? lang.toLowerCase() : 'en';
       }
       var lang = supportedLang(m.language || (navigator.languages && navigator.languages[0]) || navigator.language || 'en');
       document.documentElement.lang = lang;
@@ -488,6 +490,10 @@
           <div class="seg" id="seg-language">
             <button data-val="en" data-i18n="settings.language.en">English</button>
             <button data-val="zh-TW" data-i18n="settings.language.zhTW">Traditional Chinese</button>
+            <button data-val="zh-CN">简体中文</button>
+            <button data-val="es">Español</button>
+            <button data-val="ja">日本語</button>
+            <button data-val="fr">Français</button>
           </div>
           <small data-i18n="settings.language.hint">New users start with the closest supported browser language.</small>
         </div>
